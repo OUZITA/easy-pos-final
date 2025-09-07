@@ -60,6 +60,9 @@ class ProductImportResource extends Resource
                                 Forms\Components\TextInput::make('qty')
                                     ->label('Quantity')
                                     ->numeric()
+                                    ->extraAttributes([
+                                        'onkeydown' => "if(['e','E','+','-'].includes(event.key)) event.preventDefault();",
+                                    ])
                                     ->default(1)
                                     ->minValue(1)
                                     ->required(),
@@ -88,6 +91,7 @@ class ProductImportResource extends Resource
                             ->displayFormat('d/m/Y')
                             // ->native(false)
                             ->default(now())
+                            ->hidden()
                             ->required(),
                         Forms\Components\RichEditor::make('note')
                             ->columnSpan('full'),
@@ -151,7 +155,7 @@ class ProductImportResource extends Resource
                         RepeatableEntry::make('items')
                             ->schema([
                                 Split::make([
-                                    Grid::make(4)
+                                    Grid::make(6)
                                         ->schema([
                                             TextEntry::make('product.name')
                                                 ->label('Product')
@@ -162,6 +166,14 @@ class ProductImportResource extends Resource
                                                 ->label('Quantity')
                                                 ->badge()
                                                 ->color('info'),
+                                            TextEntry::make('product.brand.name')
+                                                ->label('Brand')
+                                                ->badge()
+                                                ->color('success'),
+                                            TextEntry::make('product.category.name')
+                                                ->label('Category')
+                                                ->badge()
+                                                ->color('success'),
 
                                             TextEntry::make('unit_price')
                                                 ->label('Unit Price')
@@ -225,6 +237,7 @@ class ProductImportResource extends Resource
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('products')
                     ->label('Products')
+                    ->wrap()
                     ->getStateUsing(function (ProductImport $record) {
                         // Option 1: Simple approach (may cause N+1 queries)
                         return $record->listProducts();
@@ -251,9 +264,7 @@ class ProductImportResource extends Resource
                     ->color('danger')
                     ->money(currency: 'usd')
                     ->getStateUsing(fn(ProductImport $record) => $record->totalPrice())
-                    ->sortable(query: function (Builder $query, string $direction): Builder {
-                        return ProductImport::sortByTotalPrice($query, $direction);
-                    })
+                    ->sortable(query: fn(Builder $query, string $direction) => ProductImport::sortByTotalPrice($query, $direction))
                     ->weight(FontWeight::Bold),
 
                 Tables\Columns\TextColumn::make('import_date')
@@ -302,16 +313,16 @@ class ProductImportResource extends Resource
                                 fn(Builder $query, $date): Builder => $query->whereDate('import_date', '<=', $date),
                             );
                     }),
-                // Tables\Filters\Filter::make('date_range')
-                //     ->form([
-                //         Forms\Components\DatePicker::make('from_date'),
-                //         Forms\Components\DatePicker::make('to_date'),
-                //     ])
-                //     ->query(function ($query, array $data) {
-                //         return $query
-                //             ->when($data['from_date'], fn($q) => $q->whereDate('import_date', '>=', $data['from_date']))
-                //             ->when($data['to_date'], fn($q) => $q->whereDate('import_date', '<=', $data['to_date']));
-                //     }),
+                Tables\Filters\Filter::make('date_range')
+                    ->form([
+                        Forms\Components\DatePicker::make('from_date'),
+                        Forms\Components\DatePicker::make('to_date'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when($data['from_date'], fn($q) => $q->whereDate('import_date', '>=', $data['from_date']))
+                            ->when($data['to_date'], fn($q) => $q->whereDate('import_date', '<=', $data['to_date']));
+                    }),
 
                 Tables\Filters\SelectFilter::make('supplier')
                     ->relationship('supplier', 'name')
@@ -361,9 +372,9 @@ class ProductImportResource extends Resource
                     ExportBulkAction::make()
                         ->color('primary')
                         ->exporter(ProductImportExporter::class)
-                        ->formats([
+                    /* ->formats([
                             ExportFormat::Xlsx,
-                        ])
+                        ]) */
                 ]
             )
             ->defaultSort('created_at', 'desc');
