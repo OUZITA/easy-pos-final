@@ -162,6 +162,7 @@ class SalesRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('name')
             ->heading("Purchase History")
+            ->defaultSort('sale_date', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('Sale #')
@@ -179,17 +180,13 @@ class SalesRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('total_price')
                     ->money(currency: 'usd')
-                    ->getStateUsing(fn(Sale $record) => $record->total_price)
                     ->weight(FontWeight::Bold)
-                    ->color('success')
-                    ->sortable(query: function (Builder $query, string $direction): Builder {
-                        return $query
-                            ->join('sale_items', 'sales.id', '=', 'sale_items.sale_id')
-                            ->groupBy('sales.id')
-                            ->selectRaw('sales.*, SUM((sale_items.unit_price * sale_items.qty) * (1 - COALESCE(sale_items.discount, 0)/100)) as total_price')
-                            ->orderBy('total_price', $direction);
-                    })                    // ->badge()
-                    ->toggleable(),
+                    ->sortable(query: fn(Builder $query, string $direction) => Sale::sortByTotalPrice($query, $direction))
+                    ->formatStateUsing(fn($record) => '$' . number_format(
+                        $record->items->sum(fn($item) => ($item->qty * $item->unit_price) * (1 - ($item->discount ?? 0) / 100)),
+                        2
+                    ))
+                    ->color('success'),
                 Tables\Columns\TextColumn::make('note')
                     ->toggleable(isToggledHiddenByDefault: false)
                     ->html(),

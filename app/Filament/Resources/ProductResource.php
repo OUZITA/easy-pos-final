@@ -275,7 +275,7 @@ class ProductResource extends Resource
     public static function getWidgets(): array
     {
         return [
-            // ProductStats::class
+            //ProductStats::class
         ];
     }
 

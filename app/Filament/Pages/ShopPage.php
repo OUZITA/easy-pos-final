@@ -28,6 +28,7 @@ use Filament\Support\Enums\Alignment;
 use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Wizard\Step;
+use App\Filament\Resources\SaleResource;
 
 class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contracts\HasForms
 {
@@ -64,13 +65,13 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                     Header::make('stock')->label('In Stock')->width('100px')->align(Alignment::Center),
                                     Header::make('unit_price')->label('Unit Price')->width('120px')->align(Alignment::Center),
                                     Header::make('discount')->label('Discount')->width('120px')->align(Alignment::Center),
-                                    Header::make('subtotal')->label('Subtotal')->width('120px')->align(Alignment::Center),
+                                    Header::make('subtotal')->label('Sub Total')->width('120px')->align(Alignment::Center),
                                     Header::make('actions')->label('')->width('80px'),
                                 ])
                                 ->schema([
                                     Hidden::make('product_id')->default(null),
                                     Placeholder::make('name')
-                                        ->label('Name:')
+                                        ->label(false)
                                         ->inlineLabel()
                                         ->content(fn($get) => $get('name') ?? '-'),
                                     TextInput::make('qty')
@@ -81,7 +82,8 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                         ->default(1)
                                         ->minValue(1)
                                         ->maxValue(fn($get) => (int) ($get('stock') ?? 1))
-                                        ->live(onBlur: true)
+                                        ->step(1)
+                                        ->lazy()
                                         ->afterStateUpdated(function ($state, callable $set, $get) {
                                             $stock = (int) ($get('stock') ?? 1);
 
@@ -111,19 +113,26 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                         ->content(fn($get) => '$' . number_format((float) ($get('unit_price') ?? 0), 2)),
                                     TextInput::make('discount')
                                         ->numeric()
-                                        ->extraAttributes([
-                                            'onkeydown' => "if(['e','E','+','-'].includes(event.key)) event.preventDefault();",
-                                        ])
                                         ->default(0)
                                         ->minValue(0)
                                         ->maxValue(100)
+                                        ->step(1)
+                                        ->required() // prevents blank values
                                         ->suffix('%')
+                                        ->extraAttributes([
+                                            'onkeydown' => "if(['e','E','+','-'].includes(event.key)) event.preventDefault();",
+                                        ])
                                         ->live(onBlur: true)
                                         ->afterStateUpdated(function ($state, callable $set) {
-                                            if ($state < 0) $set('discount', 0);
-                                            elseif ($state > 100) $set('discount', 100);
+                                            // Force to 0 if null or negative
+                                            if ($state === null || $state === '' || $state < 0) {
+                                                $set('discount', 0);
+                                            } elseif ($state > 100) {
+                                                $set('discount', 100);
+                                            }
                                             $this->updateTotals();
                                         }),
+
                                     Placeholder::make('subtotal')
                                         ->extraAttributes(['class' => 'text-center'])
                                         ->label(false)
@@ -138,6 +147,26 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                 ->addable(false)
                                 ->reorderable(false)
                                 ->streamlined(),
+                            Forms\Components\Grid::make(5)
+                                ->schema([
+                                    Placeholder::make('empty1')->label(false),
+                                    Placeholder::make('empty2')->label(false),
+                                    Placeholder::make('empty3')->label(false),
+                                    Placeholder::make('empty4')->label(false),
+                                    Placeholder::make('total_amount')
+                                        ->label('Total Amount')
+                                        ->content(fn($get) => '$' . number_format(
+                                            collect($get('items') ?? [])->sum(
+                                                fn($item) => ($item['qty'] ?? 0) * ($item['unit_price'] ?? 0) * (1 - (($item['discount'] ?? 0) / 100))
+                                            ),
+                                            2
+                                        ))
+                                        ->extraAttributes([
+                                            'class' => 'flex flex-col items-left font-bold',
+                                            'style' => 'width:350px;'
+                                        ]),
+
+                                ]),
                         ]),
 
                     // Step 2: Select customer and checkout
@@ -145,19 +174,37 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                         ->schema([
                             Forms\Components\Select::make('customer_id')
                                 ->label('Select Customer')
-                                ->options(\App\Models\Customer::pluck('name', 'id'))
+                                ->options(\App\Models\Customer::where('active', true)->pluck('name', 'id'))
                                 ->searchable()
                                 ->required()
-                                ->visible(fn($get) => !empty($get('items'))),
+                                ->reactive()
+                                ->visible(fn($get) => !empty($get('items')))
+                                ->createOptionForm([
+                                    Forms\Components\TextInput::make('name')
+                                        ->required()
+                                        ->maxLength(255),
+                                    Forms\Components\TextInput::make('phone')
+                                        ->maxLength(255),
+                                ]),
+
+
                             Placeholder::make('total')
                                 ->label('Total Amount')
                                 ->content(fn() => '$' . number_format($this->getTotalAmount(), 2)),
-                        ])
-                ])
-            ])
 
+                        ])
+
+                ])
+
+                    ->nextAction(function (Forms\Components\Actions\Action $action) {
+                        return $action
+                            ->label('Next')
+                            ->disabled(fn($get) => blank($get('items')));
+                    })
+            ])
             ->statePath('formData')
-            ->model(null);
+            ->model(null)
+        ;
     }
 
 
@@ -189,7 +236,7 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
     }
 
 
-    public function checkout(): void
+    public function checkout()
     {
         $items = $this->formData['items'] ?? [];
         $customerId = $this->formData['customer_id'] ?? null;
@@ -218,6 +265,7 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
 
 
         try {
+            $sale = null;
             DB::transaction(function () use ($items, $customerId) {
                 // Create the main sale record with proper customer_id
                 $sale = Sale::create([
@@ -252,6 +300,7 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
             });
 
 
+
             // Clear cart and customer selection after successful checkout
             $this->formData['items'] = [];
             $this->formData['customer_id'] = null;
@@ -262,6 +311,8 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                 ->body('Sale has been processed and inventory updated.')
                 ->success()
                 ->send();
+
+            return redirect()->to(SaleResource::getUrl('index'));
         } catch (\Exception $e) {
             Log::error('Sale failed: ' . $e->getMessage());
 
@@ -288,23 +339,21 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
 
                     TextColumn::make('name')
                         ->searchable()
-                        ->weight('Normal') // only this column bold
+                        ->weight('Normal')
                         ->size('md')
                         ->limit(30)
                         ->extraAttributes(['class' => 'whitespace-normal']),
 
-                    TextColumn::make('description')
+                    /* TextColumn::make('description')
                         ->label('Description')
                         ->limit(100)
                         ->wrap()
                         ->extraAttributes([
                             'style' => 'min-height:50px; display:block; overflow:hidden;'
                         ])
-                        ->formatStateUsing(fn($state) => strip_tags($state)),
+                        ->formatStateUsing(fn($state) => strip_tags($state)), */
 
-
-
-                    TextColumn::make('brand.name')
+                    /* TextColumn::make('brand.name')
                         ->badge()
                         ->color('info')
                         ->weight('normal'),
@@ -312,7 +361,7 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                     TextColumn::make('category.name')
                         ->badge()
                         ->color('info')
-                        ->weight('normal'),
+                        ->weight('normal'), */
 
                     TextColumn::make('price')
                         ->formatStateUsing(fn($state) => '$' . number_format($state, 2))
@@ -377,11 +426,41 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                 fn($q, $max) => $q->where('price', '<=', $max)
                             );
                     }),
+                Filter::make('category_id')
+                    ->form([
+                        Forms\Components\Select::make('category_id')
+                            ->label('Category')
+                            ->options(\App\Models\Category::pluck('name', 'id'))
+                            ->searchable()
+                            ->placeholder('All Categories'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query->when(
+                            $data['category_id'],
+                            fn($q, $categoryId) => $q->where('category_id', $categoryId)
+                        );
+                    }),
+
+                // Brand filter
+                Filter::make('brand_id')
+                    ->form([
+                        Forms\Components\Select::make('brand_id')
+                            ->label('Brand')
+                            ->options(\App\Models\Brand::pluck('name', 'id'))
+                            ->searchable()
+                            ->placeholder('All Brands'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query->when(
+                            $data['brand_id'],
+                            fn($q, $brandId) => $q->where('brand_id', $brandId)
+                        );
+                    }),
             ])
             ->contentGrid([
                 'sm' => 1,
-                'md' => 2,
-                'lg' => 2,
+                'md' => 1,
+                'lg' => 1,
                 'xl' => 3,
             ])
             ->paginated([6])

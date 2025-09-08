@@ -5,6 +5,7 @@ namespace App\Filament\Resources\ProductResource\Widgets;
 use App\Filament\Resources\ProductImportResource;
 use App\Filament\Resources\ProductResource;
 use App\Helpers\Util;
+use App\Models\Product;
 use Filament\Tables\Actions;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
@@ -23,10 +24,12 @@ class LowStockProduct extends BaseWidget
     {
         return $table
             ->query(
-                ProductResource::getEloquentQuery()->whereColumn('stock', '<=', 'stock_security')->where('active', true)
+                ProductResource::getEloquentQuery()->whereColumn('stock', '<=', 'stock_security')->where('active', true)->where('stock', '>', 0)
             )
             ->defaultSort('stock', 'asc')
             ->defaultPaginationPageOption(5)
+
+
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')
@@ -61,7 +64,7 @@ class LowStockProduct extends BaseWidget
                 Tables\Columns\TextColumn::make('brand.name')
                     ->label('Brand')
                     ->badge()
-                    ->color(color: 'primary'),
+                    ->color('info'),
                 Tables\Columns\TextColumn::make('category.name')
                     ->badge()
                     ->color('info'),

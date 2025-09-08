@@ -15,13 +15,13 @@
                 {{ $this->form }}
 
                 <div class="flex justify-between items-center border-t pt-4">
-                    @if (!empty($this->formData['items']))
+                    @if (!empty($this->formData['items']) /* && $this->formData['supplier_id'] */)
                         {{-- <span class="font-bold">
                             Total: ${{ number_format($this->getTotalAmount(), 2) }}
                         </span> --}}
                         <span></span>
                         <x-filament::button type="submit" color="success">
-                            Stock up Now
+                            Stock up
                         </x-filament::button>
                     @endif
                 </div>

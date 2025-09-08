@@ -313,7 +313,7 @@ class ProductImportResource extends Resource
                                 fn(Builder $query, $date): Builder => $query->whereDate('import_date', '<=', $date),
                             );
                     }),
-                Tables\Filters\Filter::make('date_range')
+                /* Tables\Filters\Filter::make('date_range')
                     ->form([
                         Forms\Components\DatePicker::make('from_date'),
                         Forms\Components\DatePicker::make('to_date'),
@@ -322,18 +322,7 @@ class ProductImportResource extends Resource
                         return $query
                             ->when($data['from_date'], fn($q) => $q->whereDate('import_date', '>=', $data['from_date']))
                             ->when($data['to_date'], fn($q) => $q->whereDate('import_date', '<=', $data['to_date']));
-                    }),
-
-                Tables\Filters\SelectFilter::make('supplier')
-                    ->relationship('supplier', 'name')
-                    ->preload()
-                    ->searchable()
-                    ->multiple(),
-                Tables\Filters\SelectFilter::make('importer')
-                    ->relationship('user', 'name')
-                    ->preload()
-                    ->searchable()
-                    ->multiple(),
+                    }), */
                 Tables\Filters\SelectFilter::make('product')
                     ->label('Product')
                     ->options(function () {
@@ -354,6 +343,18 @@ class ProductImportResource extends Resource
                     // ->searchable()
                     ->multiple()
                     ->preload(),
+
+                Tables\Filters\SelectFilter::make('supplier')
+                    ->relationship('supplier', 'name')
+                    ->preload()
+                    ->searchable()
+                    ->multiple(),
+                Tables\Filters\SelectFilter::make('importer')
+                    ->relationship('user', 'name')
+                    ->preload()
+                    ->searchable()
+                    ->multiple(),
+
             ])
             ->searchable()
             ->actions([

@@ -25,14 +25,14 @@ class Dashboard extends BaseDashboard
     {
         return $form
             ->schema([
-                Placeholder::make('new_sale_btn')
+                /* Placeholder::make('new_sale_btn')
                     ->label('')
                     ->content(new HtmlString(
                         '<a href="' . ShopPage::getUrl() . '" 
                         class="mt-6 w-full h-10 flex items-center justify-center rounded-lg bg-primary-600 text-white text-sm font-medium shadow hover:bg-primary-700 transition">
                         Click to do Sale
                     </a>'
-                    )),
+                    )), */
                 /* Placeholder::make('new_import_btn')
                     ->label('')
 
@@ -41,21 +41,20 @@ class Dashboard extends BaseDashboard
                         class="mt-6 w-full h-10 flex items-center justify-center rounded-lg bg-primary-600 text-white text-sm font-medium shadow hover:bg-primary-700 transition">
                         Click to Import Stock
                     </a>'
-                    )), */
-            ])
+                    )), */])
             ->columns(2);
     }
     /* protected function getHeaderActions(): array
     {
         return [
             Action::make('New Sale')
-                ->label('New Sale')
+                ->label('Old Sale')
                 ->url(\App\Filament\Resources\SaleResource::getUrl('create'))
                 ->color('primary')
                 ->size('xl'),
 
             Action::make('New Import')
-                ->label('New Import')
+                ->label('Old Import')
                 ->url(\App\Filament\Resources\CustomerResource::getUrl('create'))
                 ->color('primary')
                 ->size('xl'),

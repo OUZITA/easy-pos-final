@@ -250,13 +250,12 @@ class CustomerResource extends Resource
                                 ->label('Total Spent')
                                 ->icon('heroicon-m-banknotes')
                                 ->state(function ($record) {
-                                    $total = 0;
-
-                                    foreach ($record->sales as $sale) {
-                                        $total += $sale->totalPrice();
-                                    }
-
-                                    return $total;
+                                    return $record->sales->sum(
+                                        fn($sale) =>
+                                        $sale->items->sum(
+                                            fn($item) => ($item->qty ?? 0) * ($item->unit_price ?? 0) * (1 - ($item->discount ?? 0) / 100)
+                                        )
+                                    );
                                 })
                                 ->money('USD')
                                 ->badge()

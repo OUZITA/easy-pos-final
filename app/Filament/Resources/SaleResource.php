@@ -84,7 +84,6 @@ class SaleResource extends Resource
                     Forms\Components\TextInput::make('name')
                         ->required()
                         ->maxLength(255),
-
                     Forms\Components\TextInput::make('phone')
                         ->maxLength(255),
                 ]),
@@ -192,13 +191,15 @@ class SaleResource extends Resource
                     ->getStateUsing(fn(Sale $record) => $record->total_qty),
 
                 Tables\Columns\TextColumn::make('total_price')
-                    // ->sortable()
                     ->money(currency: 'usd')
                     ->weight(FontWeight::Bold)
                     ->sortable(query: fn(Builder $query, string $direction) => Sale::sortByTotalPrice($query, $direction))
-                    ->formatStateUsing(fn($record) => '$' . number_format($record->items->sum(fn($item) => $item->qty * $item->unit_price), 2))
+                    ->formatStateUsing(fn($record) => '$' . number_format(
+                        $record->items->sum(fn($item) => ($item->qty * $item->unit_price) * (1 - ($item->discount ?? 0) / 100)),
+                        2
+                    ))
                     ->color('success'),
-                // ->toggleable(),
+
 
 
                 Tables\Columns\TextColumn::make('sale_date')
@@ -380,8 +381,8 @@ class SaleResource extends Resource
                                         ->schema([
                                             TextEntry::make('product.name')
                                                 ->label('Product')
-                                                ->weight(FontWeight::SemiBold)
-                                                ->icon('heroicon-o-cube'),
+                                                ->weight(FontWeight::SemiBold),
+                                            //->icon('heroicon-o-cube'),
                                             TextEntry::make('qty')
                                                 ->label('Quantity')
                                                 ->badge()
@@ -401,8 +402,8 @@ class SaleResource extends Resource
                                                 ->color('primary'),
                                             TextEntry::make('unit_price')
                                                 ->label('Unit Price')
-                                                ->money('USD')
-                                                ->icon('heroicon-o-currency-dollar'),
+                                                ->money('USD'),
+                                            //->icon('heroicon-o-currency-dollar'),
 
                                             TextEntry::make('sub_total')
                                                 ->label('Sub Total')

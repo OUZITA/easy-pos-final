@@ -150,20 +150,23 @@
                     <th>Quantity</th>
                     <th style="white-space: nowrap;">Unit Price</th>
                     <th>Discount</th>
-                    <th>Total</th>
+                    <th>Sub Total</th>
                 </tr>
             </thead>
             <tbody class="receipt-details-table">
                 @php $subTotal = 0; @endphp
                 @foreach ($sale->items ?? [] as $item)
                     @php
-                        $amount = $item->qty * $item->unit_price;
-                        $discount = $item->discount_amount ?? 0;
+                        $discount = $item->discount ?? 0; // percentage
+                        $amount = $item->qty * $item->unit_price * (1 - $discount / 100);
                         $subTotal += $amount;
                     @endphp
                     <tr>
                         <td>{{ $item->product->name }}</td>
-                        <td>{!! $item->product->description ?? '-' !!}</td>
+                        <td style="min-height:50px; display:block; overflow:hidden;">
+                            {{ \Illuminate\Support\Str::limit(strip_tags($item->product->description ?? '-'), 150, '...') }}
+                        </td>
+
                         <td>{{ $item->qty }}</td>
                         <td>${{ number_format($item->unit_price, 2) }}</td>
                         <td>{{ number_format($item->qty > 0 ? $item->discount / $item->qty : 0) }}%</td>
@@ -173,14 +176,10 @@
             </tbody>
         </table>
         <br>
-        <p class="total">Total Discount:.......................${{ number_format($sale->discount_amount ?? 0, 2) }}
+        {{-- <p class="total">Total Discount:.......................${{ number_format($sale->discount_amount ?? 0, 2) }}
+        </p> --}}
+        <p class="total">Total Amount:.....................${{ number_format($subTotal - $sale->discount_amount, 2) }}
         </p>
-        <p class="total">Sub Total:.....................${{ number_format($subTotal - $sale->discount_amount, 2) }}
-        </p>
-        <!--<p class="total">Paid Amount:...................${{ number_format($sale->paid_amount ?? 0, 2) }}</p>
-        <p class="total">Discount:.......................${{ number_format($sale->discount ?? 0, 2) }}</p>
-        <p class="total">Amount Due:.............
-            ${{ number_format($subTotal - ($sale->paid_amount ?? 0) - ($sale->discount ?? 0), 2) }}</p>-->
         <p class="total">________________</p>
         <div class = "receipt-details">
             <p> <strong>Term of Conditions: </strong><br>
