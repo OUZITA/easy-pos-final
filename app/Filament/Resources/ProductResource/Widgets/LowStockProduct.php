@@ -111,7 +111,7 @@ class LowStockProduct extends BaseWidget
             ])
             ->headerActions([
                 Actions\Action::make('to_import')
-                    ->url('admin/import-page')
+                    ->url('admin/import-pagev2')
                     ->label('Add Stock')
                     ->icon('heroicon-o-plus')
                 // ->color('success')

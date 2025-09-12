@@ -7,12 +7,14 @@ use App\Filament\Resources\ProductImportResource\Pages;
 use App\Filament\Resources\ProductImportResource\RelationManagers;
 use App\Models\Product;
 use App\Models\ProductImport;
+use App\Models\Supplier;
 use Filament\Actions\Action;
 use Filament\Actions\Exports\Enums\ExportFormat;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -55,11 +57,22 @@ class ProductImportResource extends Resource
                                 Forms\Components\Select::make('product_id')
                                     ->label('Product')
                                     ->relationship('product', 'name', fn($query) => $query->where('active', true)->orderBy('stock'))
+                                    ->options(
+                                        Product::where('active', true)
+                                            ->orderBy('stock')
+                                            ->get()
+                                            ->mapWithKeys(fn($product) => [
+                                                $product->id => '<div style="display: flex; align-items: center; padding: 5px 0;"><img src="' . ($product->image ? \Illuminate\Support\Facades\Storage::url($product->image) : \App\Helpers\Util::getDefaultAvatar($product->name)) . '" style="width: 40px; height: 40px; margin-right: 10px; border-radius: 4px;" /><span>' . htmlspecialchars($product->name) . ' | $' . number_format($product->price ?? 0, 2) . ' | Stock: ' . ($product->stock ?? 0) . '</span></div>'
+                                            ])
+                                    )
                                     ->preload()
                                     ->required()
                                     ->distinct()
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                                    ->searchable(),
+                                    ->searchable()
+                                    ->allowHtml()
+                                    ->columnSpanFull()
+                                    ->afterStateUpdated(fn($state, callable $set) => $set('unit_price', Product::find($state)?->price ?? 0)),
 
                                 Forms\Components\TextInput::make('qty')
                                     ->label('Quantity')
@@ -69,17 +82,71 @@ class ProductImportResource extends Resource
                                     ])
                                     ->default(1)
                                     ->minValue(1)
-                                    ->required(),
+                                    ->required()
+                                    ->lazy()
+                                    ->afterStateUpdated(function ($state, callable $set) {
+                                        $state = ltrim((string) $state, '0');
+                                        if ($state === '' || !is_numeric($state)) {
+                                            $state = 1;
+                                        }
+                                        $state = (int) $state;
+
+                                        if ($state < 1) {
+                                            $set('qty', 1);
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('Quantity must be at least 1')
+                                                ->danger()
+                                                ->send();
+                                        } else {
+                                            $set('qty', $state);
+                                        }
+                                    }),
+
+                                Placeholder::make('current_stock')
+                                    ->label('Current Stock')
+                                    ->content(fn($get) => Product::find($get('product_id'))?->stock ?? 0),
 
                                 Forms\Components\TextInput::make('unit_price')
                                     ->label('Unit Price')
+                                    ->numeric()
+                                    ->minValue(0)
                                     ->prefix('$')
-                                    ->required(),
+                                    ->required()
+                                    ->lazy()
+                                    ->extraAttributes([
+                                        'onkeydown' => "if(['e','E','+','-'].includes(event.key)) event.preventDefault();",
+                                        'oninput' => "if(this.value.length > 1) this.value = this.value.replace(/^0+/, ''); if(parseFloat(this.value) < 0) this.value = 0;",
+                                    ])
+                                    ->afterStateUpdated(function ($state, callable $set) {
+                                        $state = ltrim((string) $state, '0');
+                                        if ($state === '' || !is_numeric($state)) {
+                                            $state = 0;
+                                        }
+                                        $state = (float) $state;
+
+                                        if ($state < 0) {
+                                            $set('unit_price', 0);
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('Unit price cannot be negative')
+                                                ->danger()
+                                                ->send();
+                                        } else {
+                                            $set('unit_price', $state);
+                                        }
+                                    }),
+
+                                Placeholder::make('current_price')
+                                    ->label('Current Selling Price')
+                                    ->content(fn($get) => '$' . number_format(Product::find($get('product_id'))?->price ?? 0, 2)),
+
+                                Placeholder::make('subtotal')
+                                    ->label('Subtotal')
+                                    ->content(fn($get) => '$' . number_format(($get('qty') ?? 0) * ($get('unit_price') ?? 0), 2)),
                             ])
                             ->orderColumn('')
                             ->defaultItems(1)
                             ->hiddenLabel()
-                            ->columns(3)
+                            ->columns(5)
                             ->required()
                     ]),
                 Section::make()
@@ -89,7 +156,24 @@ class ProductImportResource extends Resource
                             ->relationship('supplier', 'name', modifyQueryUsing: fn(Builder $query) => $query->where('active', true))
                             ->preload()
                             ->searchable()
-                            ->required(),
+                            ->required()
+                            ->createOptionForm([
+                                Forms\Components\TextInput::make('name')
+                                    ->required()
+                                    ->unique(Supplier::class, 'name')
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('phone')
+                                    ->label('Phone')
+                                    ->tel(),
+                                Forms\Components\Textarea::make('address')
+                                    ->label('Address'),
+                                Forms\Components\TextInput::make('bank_account')
+                                    ->label('Bank Account'),
+                                Forms\Components\TextInput::make('account_number')
+                                    ->label('Account Number'),
+                                Forms\Components\Textarea::make('description')
+                                    ->label('Description'),
+                            ]),
                         Forms\Components\DatePicker::make('import_date')
                             ->label('Import Date')
                             ->displayFormat('d/m/Y')

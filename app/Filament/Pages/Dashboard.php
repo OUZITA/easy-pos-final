@@ -44,7 +44,7 @@ class Dashboard extends BaseDashboard
                     )), */])
             ->columns(2);
     }
-    /* protected function getHeaderActions(): array
+    protected function getHeaderActions(): array
     {
         return [
             Action::make('New Sale')
@@ -60,7 +60,7 @@ class Dashboard extends BaseDashboard
                 ->size('xl'),
         ];
     }
- */
+
     public function getWidgets(): array
     {
         return [

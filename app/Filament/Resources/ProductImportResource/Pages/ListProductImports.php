@@ -16,7 +16,7 @@ class ListProductImports extends ListRecords
         return [
             Actions\CreateAction::make()
                 ->label('Add Stock')
-                ->url('import-page'),
+                ->url('import-pagev2'),
             // Actions\Action::make('sd')
             //     ->color('danger')
             //     ->url(SaleResource::getUrl('create'))
