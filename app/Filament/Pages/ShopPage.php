@@ -29,6 +29,8 @@ use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Wizard\Step;
 use App\Filament\Resources\SaleResource;
+use Filament\Forms\Components\Grid;
+
 
 class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contracts\HasForms
 {
@@ -41,6 +43,12 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
 
 
     protected static bool $shouldRegisterNavigation = false;
+    /* public ?Sale $sale = null;
+
+    public function mount(): void
+    {
+        $this->sale = new Sale(); // fresh Sale instance
+    } */
 
 
     // formData used to store cart items and customer for sale
@@ -53,6 +61,7 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
     public function form(Forms\Form $form): Forms\Form
     {
         return $form
+            ->model(Sale::class)
             ->schema([
                 Wizard::make([
                     // Step 1: Add products to cart
@@ -61,7 +70,7 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                             TableRepeater::make('items')
                                 ->headers([
                                     Header::make('name')->label('Product Name')->width('30%'),
-                                    Header::make('qty')->label('Qty')->width('100px')->align(Alignment::Center),
+                                    Header::make('qty')->label('Qty')->width('150px')->align(Alignment::Left),
                                     Header::make('stock')->label('In Stock')->width('100px')->align(Alignment::Center),
                                     Header::make('unit_price')->label('Unit Price')->width('120px')->align(Alignment::Center),
                                     Header::make('discount')->label('Discount')->width('120px')->align(Alignment::Center),
@@ -77,31 +86,50 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                     TextInput::make('qty')
                                         ->numeric()
                                         ->extraAttributes([
-                                            'onkeydown' => "if(['e','E','+','-'].includes(event.key)) event.preventDefault();",
+                                            'onkeydown' => "
+            // Block e, E, +, -
+            if(['e','E','+','-'].includes(event.key)) event.preventDefault();
+
+            // Block 0 as the first character
+            if(event.key === '0' && event.target.value.length === 0) {
+                event.preventDefault();
+            }
+        ",
+                                            // Extra: clean up pasted values or spinner changes
+                                            'oninput' => "
+            if(this.value.length > 1) {
+                this.value = this.value.replace(/^0+/, ''); // remove leading zeros
+            }
+            if(this.value === '' || parseInt(this.value) < 1) {
+                this.value = 1; // fallback
+            }
+        ",
                                         ])
                                         ->default(1)
                                         ->minValue(1)
                                         ->maxValue(fn($get) => (int) ($get('stock') ?? 1))
                                         ->step(1)
                                         ->lazy()
+                                        //->live(onBlur: false)
                                         ->afterStateUpdated(function ($state, callable $set, $get) {
                                             $stock = (int) ($get('stock') ?? 1);
 
-                                            if ($state < 1) {
-                                                $set('qty', 1);
+                                            if (!is_numeric($state) || $state < 1) {
+                                                $state = 1;
                                                 Notification::make()
                                                     ->title('Quantity too low')
                                                     ->body('Quantity cannot be less than 1.')
                                                     ->warning()
                                                     ->send();
                                             } elseif ($state > $stock) {
-                                                $set('qty', $stock);
+                                                $state = $stock;
                                                 Notification::make()
                                                     ->title('Insufficient stock')
                                                     ->body("Only {$stock} units available for this product.")
                                                     ->warning()
                                                     ->send();
                                             }
+                                            $set('qty', (int) $state);
 
                                             $this->updateTotals();
                                         }),
@@ -117,21 +145,48 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                         ->minValue(0)
                                         ->maxValue(100)
                                         ->step(1)
-                                        ->required() // prevents blank values
+                                        ->required()
                                         ->suffix('%')
                                         ->extraAttributes([
-                                            'onkeydown' => "if(['e','E','+','-'].includes(event.key)) event.preventDefault();",
+                                            'onkeydown' => "
+            // Block e, E, +, -
+            if(['e','E','+','-'].includes(event.key)) event.preventDefault();
+
+            // Prevent '00', '01', etc. but allow a single '0'
+            if(event.key === '0' && event.target.value === '0') {
+                event.preventDefault();
+            }
+        ",
+                                            'oninput' => "
+            // Remove leading zeros but allow single '0'
+            if(this.value.length > 1) {
+                this.value = this.value.replace(/^0+/, '');
+                if(this.value === '') this.value = 0;
+            }
+            // Enforce min 0
+            if(parseInt(this.value) < 0 || this.value === '') {
+                this.value = 0;
+            }
+            // Enforce max 100
+            if(parseInt(this.value) > 100) {
+                this.value = 100;
+            }
+        ",
                                         ])
-                                        ->live(onBlur: true)
+                                        ->lazy()
                                         ->afterStateUpdated(function ($state, callable $set) {
-                                            // Force to 0 if null or negative
                                             if ($state === null || $state === '' || $state < 0) {
                                                 $set('discount', 0);
                                             } elseif ($state > 100) {
                                                 $set('discount', 100);
+                                            } else {
+                                                $set('discount', (int) $state);
                                             }
+
                                             $this->updateTotals();
                                         }),
+
+
 
                                     Placeholder::make('subtotal')
                                         ->extraAttributes(['class' => 'text-center'])
@@ -143,6 +198,7 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                         )),
 
                                 ])
+                                ->emptyLabel('No Product yet.')
                                 ->deletable(true)
                                 ->addable(false)
                                 ->reorderable(false)
@@ -185,17 +241,182 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                         ->maxLength(255),
                                     Forms\Components\TextInput::make('phone')
                                         ->maxLength(255),
-                                ]),
+                                ])
+                                ->createOptionUsing(function (array $data) {
+                                    return \App\Models\Customer::create($data)->id;
+                                }),
+                            Grid::make(3) // ✅ use a number, not a string
+                                ->schema([
+                                    Placeholder::make('total')
+                                        ->label('Total Amount')
+                                        ->content(fn() => '$' . number_format($this->getTotalAmount(), 2)),
+                                    /* Placeholder::make('total_in_riel')
+                                        ->label('In Riel')
+                                        ->content(fn() => '៛' . number_format(
+                                            round($this->getTotalAmount() * 4100, -2), // ✅ rounded to nearest 100
+                                            0
+                                        )), */
+
+                                    TextInput::make('total_pay') // store in DB
+                                        ->numeric()
+                                        ->label('Payment')
+                                        ->extraAttributes([
+                                            'onkeydown' => "
+            if(['e','E','+','-'].includes(event.key)) event.preventDefault();
+            if(event.key === '0' && event.target.value.length === 0) {
+                event.preventDefault();
+            }
+        ",
+                                            'oninput' => "
+            if(this.value.length > 1) {
+                this.value = this.value.replace(/^0+/, '');
+                if(this.value === '') this.value = 0;
+            }
+            if(parseFloat(this.value) < 0 || this.value === '') {
+                this.value = 0;
+            }
+        ",
+                                            'data-total-amount' => $this->getTotalAmount(),
+
+                                        ])
+                                        ->minValue(0)
+                                        ->prefix('$')
+                                        ->required()
+                                        ->lazy() // updates change instantly
+                                        ->afterStateUpdated(function ($state, callable $set) {
+                                            // Remove leading zeros
+                                            $state = ltrim((string)$state, '0');
+
+                                            // Ensure numeric
+                                            if ($state === '' || !is_numeric($state)) {
+                                                $state = 0;
+                                            }
+
+                                            // Convert to float
+                                            $state = (float)$state;
+
+                                            $total = $this->getTotalAmount();
+
+                                            // If under total, enforce minimum and show notification
+                                            if ($state < $total) {
+                                                Notification::make()
+                                                    ->title('Insufficient Payment')
+                                                    ->body('Payment must be at least equal to the total amount.')
+                                                    ->warning()
+                                                    ->send();
+
+                                                $state = $total; // enforce minimum
+                                            }
+
+                                            // Save to DB
+                                            $set('total_pay', $state);
+                                        }),
+
+                                    Placeholder::make('change')
+                                        ->label('Change')
+                                        ->content(fn($get) => '$' . number_format(max(0, $get('total_pay') -
+                                            $this->getTotalAmount()), 2)),
+                                    //   
+
+                                    // Forms\Components\Select::make('currency')
+                                    //     ->label('Currency')
+                                    //     ->options([
+                                    //         'usd' => 'USD ($)',
+                                    //         'khr' => 'KHR (៛)',
+                                    //     ])
+                                    //     ->default('usd')
+                                    //     ->required()
+                                    //     ->live(), // allows reactive changes
 
 
-                            Placeholder::make('total')
-                                ->label('Total Amount')
-                                ->content(fn() => '$' . number_format($this->getTotalAmount(), 2)),
+                                    //                                 TextInput::make('total_pay')
+                                    //                                 ->numeric()
+                                    //                                 ->label('Payment')
+                                    //                                 ->extraAttributes([
+                                    //                                     'onkeydown' => "
+                                    //     if(['e','E','+','-'].includes(event.key)) event.preventDefault();
+                                    //     if(event.key === '0' && event.target.value.length === 0) {
+                                    //         event.preventDefault();
+                                    //     }
+                                    // ",
+                                    //                                     'oninput' => "
+                                    //     if(this.value.length > 1) {
+                                    //         this.value = this.value.replace(/^0+/, '');
+                                    //         if(this.value === '') this.value = 0;
+                                    //     }
+                                    //     if(parseFloat(this.value) < 0 || this.value === '') {
+                                    //         this.value = 0;
+                                    //     }
+                                    // ",
+                                    //                                 ])
+                                    //                                 ->minValue(0)
+                                    //                                 ->prefix(fn($get) => $get('currency') === 'usd' ? '$' : '៛')
+                                    //                                 ->required()
+                                    //                                 ->lazy()
+                                    //                                 ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                    //                                     $currency = $get('currency') ?? 'usd';
+                                    //                                     $exchangeRate = 4100;
+
+                                    //                                     // Clean input
+                                    //                                     $state = ltrim((string) $state, '0');
+                                    //                                     if ($state === '' || !is_numeric($state)) {
+                                    //                                         $state = 0;
+                                    //                                     }
+                                    //                                     $state = (float) $state;
+
+                                    //                                     // Calculate required total in selected currency
+                                    //                                     $total = $this->getTotalAmount();
+                                    //                                     if ($currency === 'khr') {
+                                    //                                         $total *= $exchangeRate;
+                                    //                                     }
+
+                                    //                                     // Validate
+                                    //                                     if ($state < $total) {
+                                    //                                         Notification::make()
+                                    //                                             ->title('Insufficient Payment')
+                                    //                                             ->body('Payment must be at least equal to the total amount.')
+                                    //                                             ->warning()
+                                    //                                             ->send();
+
+                                    //                                         $state = $total;
+                                    //                                     }
+
+                                    //                                     // Keep user input as-is in form (don’t normalize here)
+                                    //                                     $set('total_pay', $state);
+                                    //                                 })
+                                    //                                 ->dehydrateStateUsing(function ($state, $get) {
+                                    //                                     // 👇 normalize to USD only when saving to DB
+                                    //                                     if ($get('currency') === 'khr') {
+                                    //                                         return $state / 4100;
+                                    //                                     }
+                                    //                                     return $state;
+                                    //                                 }),
+                                    // Placeholder::make('change')
+                                    //     ->label('Change')
+                                    //     ->content(function ($get) {
+                                    //         $currency = $get('currency') ?? 'usd';
+                                    //         $total = $this->getTotalAmount();
+                                    //         $pay = $get('total_pay') ?? 0;
+
+                                    //         if ($currency === 'khr') {
+                                    //             $exchangeRate = 4100;
+                                    //             $total = $total * $exchangeRate;
+                                    //             $symbol = '៛';
+                                    //         } else {
+                                    //             $symbol = '$';
+                                    //         }
+
+                                    //         $change = max(0, $pay - $total);
+
+                                    //         return $symbol . number_format($change, 2);
+                                    //     }),
+
+
+
+                                ])
 
                         ])
-
                 ])
-
                     ->nextAction(function (Forms\Components\Actions\Action $action) {
                         return $action
                             ->label('Next')
@@ -203,7 +424,7 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                     })
             ])
             ->statePath('formData')
-            ->model(null)
+            // ->model(null)
         ;
     }
 
@@ -272,6 +493,7 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                     'user_id' => auth()->id(),
                     'customer_id' => $customerId,
                     'sale_date' => now(),
+                    'total_pay' => $this->formData['total_pay'] ?? 0,
                     // 'total_amount' => $this->getTotalAmount(),
                 ]);
 

@@ -21,7 +21,7 @@
                         </span> --}}
                         <span></span>
                         <x-filament::button type="submit" color="success">
-                            Stock up
+                            Stock In
                         </x-filament::button>
                     @endif
                 </div>

@@ -109,4 +109,26 @@ class Sale extends Model
             )
             ->orderBy('items.total_price', $direction);
     }
+    // This will hold the runtime payment value (not stored in DB)
+
+    protected function change(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => max(0, (float) $this->total_pay - (float) $this->total_price)
+        );
+    }
+    protected function totalPay(): Attribute
+    {
+        return Attribute::make(
+            set: function ($value, $attributes) {
+                $exchangeRate = 4100;
+
+                if (($attributes['currency'] ?? 'usd') === 'khr') {
+                    return round($value / $exchangeRate, 2); // always USD
+                }
+
+                return (float) $value;
+            }
+        );
+    }
 }

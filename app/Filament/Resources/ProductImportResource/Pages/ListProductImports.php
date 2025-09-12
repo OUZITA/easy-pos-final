@@ -15,7 +15,7 @@ class ListProductImports extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Create Import')
+                ->label('Add Stock')
                 ->url('import-page'),
             // Actions\Action::make('sd')
             //     ->color('danger')

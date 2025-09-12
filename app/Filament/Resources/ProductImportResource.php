@@ -38,6 +38,10 @@ class ProductImportResource extends Resource
     protected static ?string $navigationGroup = 'Inventory';
 
     protected static ?int $navigationSort = 1;
+    public static function getNavigationLabel(): string
+    {
+        return 'Stock In'; // 👈 Change this to whatever you want
+    }
 
     public static function form(Form $form): Form
     {
@@ -159,8 +163,8 @@ class ProductImportResource extends Resource
                                         ->schema([
                                             TextEntry::make('product.name')
                                                 ->label('Product')
-                                                ->weight(FontWeight::SemiBold)
-                                                ->icon('heroicon-o-cube'),
+                                                ->weight(FontWeight::SemiBold),
+                                            //->icon('heroicon-o-cube'),
 
                                             TextEntry::make('qty')
                                                 ->label('Quantity')
@@ -194,7 +198,7 @@ class ProductImportResource extends Resource
                             ->contained(false)
                             ->hiddenLabel(),
 
-                        Grid::make(4)
+                        Grid::make(5)
                             ->schema([
                                 // TextEntry::make('total_items')
                                 //     ->label('Total Items')
@@ -209,6 +213,8 @@ class ProductImportResource extends Resource
                                 TextEntry::make('s')
                                     ->label(''),
                                 TextEntry::make('x')
+                                    ->label(''),
+                                TextEntry::make('z')
                                     ->label(''),
 
                                 TextEntry::make('total_amount')

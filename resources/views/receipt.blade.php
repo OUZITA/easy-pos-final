@@ -10,45 +10,54 @@
 
         <title>Receipt</title>
         <style>
-            /* Styles for Print and Screen */
             body {
                 font-family: Arial, sans-serif;
                 margin: 0;
                 padding: 0;
+                font-size: 13px;
+                /* slightly larger than 12px */
             }
 
             .receipt {
                 width: 190mm;
-                height: 297mm;
-                /* Standard receipt width */
                 margin: 10px auto;
-                padding: 10px;
+                padding: 9px;
+                /* medium padding */
                 border: 1px solid #ffffff;
             }
 
+            h1 {
+                font-size: 1.3em;
+                /* between 1.2 and 1.5 */
+                text-align: center;
+                margin-bottom: 5px;
+            }
+
             h2 {
-                font-size: 1.5em;
+                font-size: 1.05em;
+                /* slightly larger */
                 text-align: left;
                 margin-bottom: 2px;
             }
 
             p {
-                font-size: 1em;
-            }
-
-            .store-info {
-                margin-bottom: 1px;
+                font-size: 0.95em;
+                /* slightly larger than 0.9 */
+                margin: 2px 0;
             }
 
             table {
                 width: 100%;
                 border-collapse: collapse;
+                font-size: 0.9em;
+                /* between 0.85 and 1 */
             }
 
             th,
             td {
                 border: 1px solid #eee;
                 padding: 5px;
+                /* medium padding */
                 text-align: left;
             }
 
@@ -59,37 +68,34 @@
             .total {
                 font-weight: bold;
                 text-align: right;
+                font-size: 1em;
+                /* slightly bigger than 0.95 */
             }
 
             .signature-container {
                 display: flex;
                 justify-content: space-between;
-                margin-top: 50px;
+                margin-top: 40px;
+                /* medium spacing */
                 width: 100%;
-                align: center;
-                gap: 20px;
-                /* optional: adds spacing between columns */
+                gap: 15px;
             }
 
             .signature-section {
                 width: 45%;
-                /* now they can sit side-by-side */
                 text-align: center;
             }
-
 
             .signature_buy,
             .signature_sell {
                 margin-top: 20px;
-                margin-bottom: 50px;
+                margin-bottom: 40px;
             }
 
             .receipt-details-table {
                 font-size: 0.8em;
-                font-style: Arial;
-                margin-top: 5px;
+                /* medium size for table */
             }
-
 
             .receipt-details {
                 font-size: 0.8em;
@@ -100,19 +106,19 @@
             @media print {
                 .receipt {
                     width: 80mm;
-                    /* Ensure correct print width */
                     margin: 0;
                     padding: 5px;
                     border: none;
                 }
 
                 body {
-                    font-size: 0.5em;
+                    font-size: 11px;
+                    /* medium print size */
                 }
-
-                /* Reduce font size for printing */
             }
         </style>
+
+
     </head>
 </head>
 
@@ -122,7 +128,7 @@
             <h1 text-align: center;>Invoice</h1>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between;">
-            <img src="{{ public_path('storage\default\bg.png') }}" alt="Logo" width="150" align="right">
+            <img src="{{ public_path('storage\default\bg.png') }}" alt="Logo" width="70" align="right">
             <h2 style="margin: 0;">TL Gold Computer</h2>
         </div>
 
@@ -150,7 +156,7 @@
                     <th>Quantity</th>
                     <th style="white-space: nowrap;">Unit Price</th>
                     <th>Discount</th>
-                    <th>Sub Total</th>
+                    <th style="white-space: nowrap;">Sub Total</th>
                 </tr>
             </thead>
             <tbody class="receipt-details-table">
@@ -164,7 +170,7 @@
                     <tr>
                         <td>{{ $item->product->name }}</td>
                         <td style="min-height:50px; display:block; overflow:hidden;">
-                            {{ \Illuminate\Support\Str::limit(strip_tags($item->product->description ?? '-'), 150, '...') }}
+                            {{ \Illuminate\Support\Str::limit(strip_tags($item->product->description ?? '-'), 200, '...') }}
                         </td>
 
                         <td>{{ $item->qty }}</td>
@@ -178,7 +184,10 @@
         <br>
         {{-- <p class="total">Total Discount:.......................${{ number_format($sale->discount_amount ?? 0, 2) }}
         </p> --}}
+
         <p class="total">Total Amount:.....................${{ number_format($subTotal - $sale->discount_amount, 2) }}
+        </p>
+        <p class="total">Paid Amount:.....................${{ number_format($sale->total_pay, 2) }}
         </p>
         <p class="total">________________</p>
         <div class = "receipt-details">
@@ -197,18 +206,38 @@
             </p>
         </div>
 
-        <table style="width: 100%; margin-top: 50px; border-collapse: collapse; border: none;">
-            <tr>
-                <td style="text-align: left; width: 50%; border: none; padding: 0;margin-left: 30px;">
-                    <p style="margin-bottom: 10px; margin-left: 30px;">Customer Signature</p>
-                    <p style="margin-top: 50;">&nbsp;&nbsp;&nbsp;&nbsp;----------------------------------</p>
-                </td>
-                <td style="text-align: right; width: 50%; border: none; padding: 0;margin-right: 30px;">
-                    <p style="margin-bottom: 10px; margin-right: 50px;">Seller Signature</p>
-                    <p style="margin-top: 50;">----------------------------------&nbsp;&nbsp;&nbsp;&nbsp;</p>
-                </td>
-            </tr>
-        </table>
+        <div style="display: flex; justify-content: space-between; margin-top: 50px; width: 100%;">
+            <!-- Customer Signature -->
+            <div style="width: 49%; text-align: center; display: inline-block;">
+                <p style="margin-bottom: 10px;">Customer Signature</p>
+                <div
+                    style="
+            border: 1px solid #000;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        ">
+                    <span style="color: #aaa;"></span>
+                </div>
+            </div>
+
+            <!-- Seller Signature -->
+            <div style="width: 49%; text-align: center; display: inline-block;">
+                <p style="margin-bottom: 10px;">Seller Signature</p>
+                <div
+                    style="
+            border: 1px solid #000;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        ">
+                    <span style="color: #aaa;"></span>
+                </div>
+            </div>
+        </div>
+
     </div>
 </body>
 

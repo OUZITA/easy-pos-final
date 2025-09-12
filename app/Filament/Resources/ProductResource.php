@@ -72,8 +72,28 @@ class ProductResource extends Resource
                                     ->label('Price')
                                     ->required()
                                     ->numeric()
+                                    ->lazy()
                                     ->extraAttributes([
-                                        'onkeydown' => "if(['e','E','+','-'].includes(event.key)) event.preventDefault();",
+                                        'onkeydown' => "
+            // Block e, E, +, -
+            if(['e','E','+','-'].includes(event.key)) event.preventDefault();
+
+            // Prevent leading zero if field is empty
+            if(event.key === '0' && event.target.value.length === 0) {
+                event.preventDefault();
+            }
+        ",
+                                        'oninput' => "
+            // Remove leading zeros
+            if(this.value.length > 1) {
+                this.value = this.value.replace(/^0+/, '');
+                if(this.value === '') this.value = 0;
+            }
+            // Enforce min 0
+            if(parseFloat(this.value) < 0 || this.value === '') {
+                this.value = 0;
+            }
+        ",
                                     ])
                                     ->prefix('$')
                                     ->placeholder('0.00')
@@ -109,10 +129,31 @@ class ProductResource extends Resource
                                     ])
                                     ->placeholder('Select or create brand'),
                                 Forms\Components\TextInput::make('stock_security')
+                                    ->label(' Low Stock Alert')
                                     ->required()
                                     ->numeric()
+                                    ->lazy()
                                     ->extraAttributes([
-                                        'onkeydown' => "if(['e','E','+','-'].includes(event.key)) event.preventDefault();",
+                                        'onkeydown' => "
+            // Block e, E, +, -
+            if(['e','E','+','-'].includes(event.key)) event.preventDefault();
+
+            // Prevent leading zero if field is empty
+            if(event.key === '0' && event.target.value.length === 0) {
+                event.preventDefault();
+            }
+        ",
+                                        'oninput' => "
+            // Remove leading zeros
+            if(this.value.length > 1) {
+                this.value = this.value.replace(/^0+/, '');
+                if(this.value === '') this.value = 0;
+            }
+            // Enforce min 0
+            if(parseFloat(this.value) < 0 || this.value === '') {
+                this.value = 0;
+            }
+        ",
                                     ])
                                     ->minValue(1)
 

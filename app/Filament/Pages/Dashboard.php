@@ -55,12 +55,12 @@ class Dashboard extends BaseDashboard
 
             Action::make('New Import')
                 ->label('Old Import')
-                ->url(\App\Filament\Resources\CustomerResource::getUrl('create'))
+                ->url(\App\Filament\Resources\ProductImportResource::getUrl('create'))
                 ->color('primary')
                 ->size('xl'),
         ];
-    } */
-
+    }
+ */
     public function getWidgets(): array
     {
         return [

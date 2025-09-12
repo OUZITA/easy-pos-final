@@ -219,7 +219,7 @@ class SaleResource extends Resource
                     ->sortable()
                     ->dateTime('d/m/Y')
                     ->dateTooltip('d/M/Y')
-                    ->toggleable(true),
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Filter::make('sale_date')
@@ -419,28 +419,37 @@ class SaleResource extends Resource
                             ->contained(false)
                             ->hiddenLabel(),
 
-                        Grid::make(5)
+                        Grid::make(1)
+                            ->columnSpan(1) // optional if inside another grid
                             ->schema([
-                                TextEntry::make('d')
-                                    ->label(''),
-                                TextEntry::make('s')
-                                    ->label(''),
-                                TextEntry::make('x')
-                                    ->label(''),
-                                TextEntry::make('p')
-                                    ->label(''),
-
                                 TextEntry::make('total_amount')
                                     ->label('Total Amount')
-                                    ->state(function ($record) {
-                                        return $record->total_price;
-                                    })
+                                    ->state(fn($record) => $record->total_price)
                                     ->money('USD')
                                     ->size('lg')
-                                    ->weight(FontWeight::Bold)
+                                    //->weight(FontWeight::Bold)
                                     ->color('success')
-                                    ->icon('heroicon-o-currency-dollar'),
+
+                                    ->extraAttributes([
+                                        'class' => 'text-right', // aligns text to the right
+                                    ]),
+
+                                TextEntry::make('payment')
+                                    ->label('Paid Amount')
+                                    ->state(fn($record) => $record->total_pay)
+                                    ->money('USD')
+                                    ->size('lg')
+                                    //->weight(FontWeight::Bold)
+                                    ->color('info')
+
+                                    ->extraAttributes([
+                                        'class' => 'text-right', // aligns text to the right
+                                    ]),
                             ])
+                            ->extraAttributes([
+                                'class' => 'flex justify-end', // pushes entire column to the right
+                            ])
+
                     ])
                     ->collapsible(),
                 Grid::make()

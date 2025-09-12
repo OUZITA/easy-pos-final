@@ -3,7 +3,8 @@
 
 namespace App\Filament\Pages;
 
-
+use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
@@ -29,6 +30,8 @@ use Awcodes\TableRepeater\Components\TableRepeater;
 use Filament\Forms\Components\Placeholder;
 use Awcodes\TableRepeater\Header;
 use Filament\Support\Enums\Alignment;
+use Filament\Tables\Actions;
+use Filament\Tables\Filters\Filter;
 
 
 class ImportPage extends Page implements Tables\Contracts\HasTable, Forms\Contracts\HasForms
@@ -195,22 +198,12 @@ class ImportPage extends Page implements Tables\Contracts\HasTable, Forms\Contra
     {
         return $form
             ->schema([
-                // --- Supplier & Note ---
-                Forms\Components\Select::make('supplier_id')
-                    ->label('Select Supplier')
-                    ->options(\App\Models\Supplier::pluck('name', 'id'))
-                    ->searchable()
-                    ->placeholder('Select the supplier')
-                    ->required()
-                    ->reactive(),
-
-
 
                 // --- Import Items ---
                 TableRepeater::make('items')
                     ->headers([
                         Header::make('name')->label('Product Name')->width('30%'),
-                        Header::make('qty')->label('Quantity')->width('100px')->align(Alignment::Center),
+                        Header::make('qty')->label('Quantity')->width('150px')->align(Alignment::Left),
                         Header::make('stock')->label('Currently In Stock')->width('120px')->align(Alignment::Center),
                         Header::make('unit_price')->label('Price Per Unit')->width('120px')->align(Alignment::Center),
                         Header::make('product_price')->label('Current Selling Price')->width('140px')->align(Alignment::Center),
@@ -223,6 +216,7 @@ class ImportPage extends Page implements Tables\Contracts\HasTable, Forms\Contra
                         Placeholder::make('name')
                             ->label(false)
                             ->inlineLabel()
+                            ->extraAttributes(['class' => 'whitespace-nowrap'])
                             ->content(fn($get) => $get('name') ?? '-'),
 
                         TextInput::make('qty')
@@ -230,21 +224,49 @@ class ImportPage extends Page implements Tables\Contracts\HasTable, Forms\Contra
                             ->minValue(1)
                             ->type('number')
                             ->extraAttributes([
-                                'onkeydown' => "if(['e','E','+','-'].includes(event.key)) event.preventDefault();",
+                                'onkeydown' => "
+            // Block e, E, +, -
+            if(['e','E','+','-'].includes(event.key)) event.preventDefault();
+
+            // Block 0 as first character
+            if(event.key === '0' && event.target.value.length === 0) {
+                event.preventDefault();
+            }
+        ",
+                                'oninput' => "
+            // Remove leading zeros
+            if(this.value.length > 1) {
+                this.value = this.value.replace(/^0+/, '');
+                if(this.value === '') this.value = 1;
+            }
+            // Prevent going below 1
+            if(parseInt(this.value) < 1 || this.value === '') {
+                this.value = 1;
+            }
+        ",
                             ])
                             ->default(1)
-                            ->live(/* onBlur: true */)
+                            ->lazy()
                             ->afterStateUpdated(function ($state, callable $set) {
-                                if ((int) $state < 1) {
+                                $state = ltrim((string) $state, '0');
+                                if ($state === '' || !is_numeric($state)) {
+                                    $state = 1;
+                                }
+                                $state = (int) $state;
+
+                                if ($state < 1) {
                                     $set('qty', 1);
                                     Notification::make()
                                         ->title('Quantity must be at least 1')
                                         ->danger()
                                         ->send();
+                                } else {
+                                    $set('qty', $state);
                                 }
 
                                 $this->updateTotals();
                             }),
+
 
                         Placeholder::make('stock')
                             ->label(false)
@@ -253,21 +275,50 @@ class ImportPage extends Page implements Tables\Contracts\HasTable, Forms\Contra
                         TextInput::make('unit_price')
                             ->numeric()
                             ->extraAttributes([
-                                'onkeydown' => "if(['e','E','+','-'].includes(event.key)) event.preventDefault();",
+                                'onkeydown' => "
+            // Block e, E, +, -
+            if(['e','E','+','-'].includes(event.key)) event.preventDefault();
+
+            // Prevent leading zero if field is empty
+            if(event.key === '0' && event.target.value.length === 0) {
+                event.preventDefault();
+            }
+        ",
+                                'oninput' => "
+            // Remove leading zeros
+            if(this.value.length > 1) {
+                this.value = this.value.replace(/^0+/, '');
+                if(this.value === '') this.value = 0;
+            }
+            // Enforce min 0
+            if(parseFloat(this.value) < 0 || this.value === '') {
+                this.value = 0;
+            }
+        ",
                             ])
                             ->minValue(0)
                             ->prefix('$')
                             ->required()
-                            ->live(onBlur: true)
+                            ->lazy() // smoother than live
                             ->afterStateUpdated(function ($state, callable $set) {
-                                if ((float) $state < 0 || $state === '' || $state === null) {
+                                // Normalize
+                                $state = ltrim((string) $state, '0');
+                                if ($state === '' || !is_numeric($state)) {
+                                    $state = 0;
+                                }
+                                $state = (float) $state;
+
+                                if ($state < 0) {
                                     $set('unit_price', 0);
                                     Notification::make()
                                         ->title('Unit price cannot be negative')
                                         ->danger()
                                         ->send();
+                                } else {
+                                    $set('unit_price', $state);
                                 }
                             }),
+
 
                         Placeholder::make('product_price')
                             ->label(false)
@@ -286,7 +337,9 @@ class ImportPage extends Page implements Tables\Contracts\HasTable, Forms\Contra
                             ),
                     ])
                     ->reorderable(false)
+                    ->emptyLabel('No Product yet.')
                     ->addable(false),
+
 
                 Forms\Components\Grid::make(5)
                     ->schema([
@@ -305,6 +358,25 @@ class ImportPage extends Page implements Tables\Contracts\HasTable, Forms\Contra
                                 'style' => 'width:350px;'
                             ]),
                     ]),
+                Forms\Components\Select::make('supplier_id')
+                    ->label('Select Supplier')
+                    ->options(\App\Models\Supplier::where('active', true)->pluck('name', 'id'))
+                    ->searchable()
+                    ->required()
+                    ->reactive()
+                    ->placeholder('Select or create supplier')
+                    ->createOptionForm([
+                        Forms\Components\TextInput::make('name')->required(),
+                        Forms\Components\TextInput::make('phone')->tel(),
+                        Forms\Components\TextInput::make('address'),
+                        Forms\Components\TextInput::make('bank_name'),
+                        Forms\Components\TextInput::make('account_number'),
+                        Forms\Components\Textarea::make('description')->columnSpanFull(),
+                        Forms\Components\Toggle::make('active')->default(true)->required(),
+                    ])
+                    ->createOptionUsing(fn(array $data) => \App\Models\Supplier::create($data)->id),
+
+
                 Forms\Components\Textarea::make('note')
                     ->label('Note')
                     ->nullable(),
@@ -433,12 +505,12 @@ class ImportPage extends Page implements Tables\Contracts\HasTable, Forms\Contra
             ->header(null)
             ->query(Product::query()->where('active', 1))
             ->defaultSort('stock')
+
             ->columns([
                 Stack::make([
                     ImageColumn::make('image')
-                        ->height(100)
+                        ->height(80)
                         ->defaultImageUrl(fn($record) => \App\Helpers\Util::getDefaultAvatar($record->name)),
-
 
                     TextColumn::make('name')
                         ->searchable()
@@ -447,15 +519,15 @@ class ImportPage extends Page implements Tables\Contracts\HasTable, Forms\Contra
                         ->limit(30),
 
 
-                    TextColumn::make('description')
+                    /*  TextColumn::make('description')
                         ->label('Description')
                         ->limit(100)
                         ->wrap()
                         ->extraAttributes([
                             'style' => 'min-height:50px; display:block; overflow:hidden;'
                         ])
-                        ->formatStateUsing(fn($state) => strip_tags($state)),
-                    TextColumn::make('brand.name')
+                        ->formatStateUsing(fn($state) => strip_tags($state)), */
+                    /* TextColumn::make('brand.name')
                         ->searchable()
                         ->label('Brand')
                         ->badge()
@@ -463,7 +535,7 @@ class ImportPage extends Page implements Tables\Contracts\HasTable, Forms\Contra
                     TextColumn::make('category.name')
                         ->badge()
                         ->color('info')
-                        ->searchable(),
+                        ->searchable(), */
 
 
                     TextColumn::make('price')
@@ -492,6 +564,195 @@ class ImportPage extends Page implements Tables\Contracts\HasTable, Forms\Contra
                         ->pluck('product_id')
                         ->contains($record->id)),
             ])
+            ->filters([
+                Filter::make('price')
+                    ->form([
+                        Forms\Components\TextInput::make('min_price')
+                            ->numeric()
+                            ->extraAttributes([
+                                'onkeydown' => "if(['e','E','+','-'].includes(event.key)) event.preventDefault();",
+                            ])
+                            ->label('Min Price')
+                            ->prefix('$'),
+                        Forms\Components\TextInput::make('max_price')
+                            ->numeric()
+                            ->extraAttributes([
+                                'onkeydown' => "if(['e','E','+','-'].includes(event.key)) event.preventDefault();",
+                            ])
+                            ->label('Max Price')
+                            ->prefix('$'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when(
+                                $data['min_price'],
+                                fn($q, $min) => $q->where('price', '>=', $min)
+                            )
+                            ->when(
+                                $data['max_price'],
+                                fn($q, $max) => $q->where('price', '<=', $max)
+                            );
+                    }),
+                Filter::make('category_id')
+                    ->form([
+                        Forms\Components\Select::make('category_id')
+                            ->label('Category')
+                            ->options(\App\Models\Category::pluck('name', 'id'))
+                            ->searchable()
+                            ->placeholder('All Categories'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query->when(
+                            $data['category_id'],
+                            fn($q, $categoryId) => $q->where('category_id', $categoryId)
+                        );
+                    }),
+
+                // Brand filter
+                Filter::make('brand_id')
+                    ->form([
+                        Forms\Components\Select::make('brand_id')
+                            ->label('Brand')
+                            ->options(\App\Models\Brand::pluck('name', 'id'))
+                            ->searchable()
+                            ->placeholder('All Brands'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query->when(
+                            $data['brand_id'],
+                            fn($q, $brandId) => $q->where('brand_id', $brandId)
+                        );
+                    }),
+            ])
+            ->headerActions([
+                Actions\Action::make('create_product_inline')
+                    ->label('Add New Product')
+                    ->icon('heroicon-o-plus')
+                    ->form([
+                        \Filament\Forms\Components\Section::make('Product Information')
+                            ->schema([
+                                \Filament\Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('name')
+                                            ->label('Product Name')
+                                            ->required()
+                                            ->maxLength(255)
+                                            ->placeholder('Enter product name')
+                                            ->unique(ignoreRecord: true),
+
+                                        Forms\Components\TextInput::make('price')
+                                            ->label('Price')
+                                            ->required()
+                                            ->numeric()
+                                            ->lazy()
+                                            ->extraAttributes([
+                                                'onkeydown' => "
+                                        if(['e','E','+','-'].includes(event.key)) event.preventDefault();
+                                        if(event.key === '0' && event.target.value.length === 0) event.preventDefault();
+                                    ",
+                                                'oninput' => "
+                                        if(this.value.length > 1) this.value = this.value.replace(/^0+/, '');
+                                        if(this.value === '' || parseFloat(this.value) < 0) this.value = 0;
+                                    ",
+                                            ])
+                                            ->prefix('$')
+                                            ->placeholder('0.00')
+                                            ->minValue(0.01),
+
+                                        Forms\Components\Select::make('category_id')
+                                            ->label('Category')
+                                            ->required()
+                                            ->relationship('category', 'name', fn($query) => $query->where('active', true))
+                                            ->searchable()
+                                            ->preload()
+                                            ->exists(table: Category::class, column: 'id')
+                                            ->createOptionForm([
+                                                Forms\Components\TextInput::make('name')
+                                                    ->unique()
+                                                    ->required()
+                                                    ->maxLength(255),
+                                            ])
+                                            ->placeholder('Select or create category'),
+
+                                        Forms\Components\Select::make('brand_id')
+                                            ->label('Brand')
+                                            ->required()
+                                            ->relationship('brand', 'name', fn($query) => $query->where('active', true))
+                                            ->searchable()
+                                            ->preload()
+                                            ->exists(table: Brand::class, column: 'id')
+                                            ->createOptionForm([
+                                                Forms\Components\TextInput::make('name')
+                                                    ->required()
+                                                    ->unique()
+                                                    ->maxLength(255),
+                                            ])
+                                            ->placeholder('Select or create brand'),
+
+                                        Forms\Components\TextInput::make('stock_security')
+                                            ->label('Low Stock Alert')
+                                            ->required()
+                                            ->numeric()
+                                            ->lazy()
+                                            ->extraAttributes([
+                                                'onkeydown' => "
+                                        if(['e','E','+','-'].includes(event.key)) event.preventDefault();
+                                        if(event.key === '0' && event.target.value.length === 0) event.preventDefault();
+                                    ",
+                                                'oninput' => "
+                                        if(this.value.length > 1) this.value = this.value.replace(/^0+/, '');
+                                        if(this.value === '' || parseFloat(this.value) < 0) this.value = 0;
+                                    ",
+                                            ])
+                                            ->minValue(1),
+                                    ]),
+                            ]),
+
+                        Forms\Components\RichEditor::make('description')
+                            ->label('Product Description')
+                            ->placeholder('Describe your product in detail...')
+                            ->columnSpanFull(),
+
+                        Forms\Components\Section::make('Product Media')
+                            ->description('Upload product images')
+                            ->icon('heroicon-m-photo')
+                            ->schema([
+                                Forms\Components\FileUpload::make('image')
+                                    ->label('Product Image')
+                                    ->image()
+                                    ->preserveFilenames()
+                                    //->imagePreviewHeight('200')
+                                    ->imageEditor()
+                                    ->imageEditorAspectRatios([
+                                        '16:9',
+                                        '4:3',
+                                        '1:1',
+                                    ])
+                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                                    ->directory('products')
+                                    ->disk('public')
+                                    ->visibility('public')
+                                    ->maxSize(2048)
+
+                            ]),
+
+                        Forms\Components\Toggle::make('active')
+                            ->default(true)
+                            ->required(),
+                    ])
+                    ->modalWidth('6xl') // optional, make modal wider
+                    ->action(function (array $data, \Filament\Tables\Actions\Action $action) {
+                        \App\Models\Product::create($data);
+
+                        $action->successNotification(
+                            fn() => \Filament\Notifications\Notification::make()
+                                ->title('Product created successfully!')
+                                ->success()
+                        );
+                    })
+
+            ])
+
             ->contentGrid([
                 'sm' => 1,
                 'md' => 2,
