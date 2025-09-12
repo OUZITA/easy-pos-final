@@ -56,23 +56,33 @@ class ProductImportResource extends Resource
                             ->schema([
                                 Forms\Components\Select::make('product_id')
                                     ->label('Product')
-                                    ->relationship('product', 'name', fn($query) => $query->where('active', true)->orderBy('stock'))
-                                    ->options(
-                                        Product::where('active', true)
-                                            ->orderBy('stock')
-                                            ->get()
-                                            ->mapWithKeys(fn($product) => [
-                                                $product->id => '<div style="display: flex; align-items: center; padding: 5px 0;"><img src="' . ($product->image ? \Illuminate\Support\Facades\Storage::url($product->image) : \App\Helpers\Util::getDefaultAvatar($product->name)) . '" style="width: 40px; height: 40px; margin-right: 10px; border-radius: 4px;" /><span>' . htmlspecialchars($product->name) . ' | $' . number_format($product->price ?? 0, 2) . ' | Stock: ' . ($product->stock ?? 0) . '</span></div>'
-                                            ])
+                                    ->relationship(
+                                        name: 'product',
+                                        titleAttribute: 'name',
+                                        modifyQueryUsing: fn($query) => $query->where('active', true)->orderBy('stock')
                                     )
-                                    ->preload()
+                                    ->getOptionLabelFromRecordUsing(
+                                        fn($record) => '
+        <div style="display: flex; align-items: center;">
+            <img src="' . ($record->image
+                                            ? \Illuminate\Support\Facades\Storage::url($record->image)
+                                            : \App\Helpers\Util::getDefaultAvatar($record->name)
+                                        ) . '" 
+            style="width: 30px; height: 30px; margin-right: 10px; border-radius: 4px;" />
+            <span>' . e($record->name) . ' | $' . number_format($record->price ?? 0, 2) . ' | Stock: ' . ($record->stock ?? 0) . '</span>
+        </div>'
+                                    )
+                                    ->allowHtml()
                                     ->required()
                                     ->distinct()
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                                     ->searchable()
-                                    ->allowHtml()
                                     ->columnSpanFull()
-                                    ->afterStateUpdated(fn($state, callable $set) => $set('unit_price', Product::find($state)?->price ?? 0)),
+                                    ->afterStateUpdated(
+                                        fn($state, callable $set) =>
+                                        $set('unit_price', \App\Models\Product::find($state)?->price ?? 0)
+                                    ),
+
 
                                 Forms\Components\TextInput::make('qty')
                                     ->label('Quantity')
@@ -173,7 +183,8 @@ class ProductImportResource extends Resource
                                     ->label('Account Number'),
                                 Forms\Components\Textarea::make('description')
                                     ->label('Description'),
-                            ]),
+                            ])
+                            ->createOptionUsing(fn(array $data) => Supplier::create($data)->id),
                         Forms\Components\DatePicker::make('import_date')
                             ->label('Import Date')
                             ->displayFormat('d/m/Y')
@@ -336,10 +347,12 @@ class ProductImportResource extends Resource
                     ->label('Total Qty')
                     ->sortable(query: function (Builder $query, string $direction): Builder {
                         $result =  $query
-                            ->join('product_import_items', 'product_imports.id', '=', 'product_import_items.product_import_id')
-                            ->groupBy('product_imports.id')
-                            ->selectRaw('product_imports.*, SUM(product_import_items.qty) as total_qty')
+                            ->select('product_imports.*')
+                            ->selectRaw('(SELECT SUM(qty) 
+              FROM product_import_items 
+              WHERE product_import_items.product_import_id = product_imports.id) as total_qty')
                             ->orderBy('total_qty', $direction);
+
                         Log::info($result->get());
                         return $result;
                     })

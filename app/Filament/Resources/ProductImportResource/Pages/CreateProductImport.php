@@ -91,7 +91,8 @@ class CreateProductImport extends CreateRecord
                                         ->required()
                                         ->unique(Category::class, 'name')
                                         ->maxLength(255),
-                                ]),
+                                ])
+                                ->createOptionUsing(fn(array $data) => Category::create($data)->id),
                             Forms\Components\Select::make('brand_id')
                                 ->label('Brand')
                                 ->options(Brand::where('active', true)->pluck('name', 'id'))
@@ -103,7 +104,8 @@ class CreateProductImport extends CreateRecord
                                         ->required()
                                         ->unique(Brand::class, 'name')
                                         ->maxLength(255),
-                                ]),
+                                ])
+                                ->createOptionUsing(fn(array $data) => Brand::create($data)->id),
                             Forms\Components\TextInput::make('stock_security')
                                 ->label('Low Stock Alert')
                                 ->required()

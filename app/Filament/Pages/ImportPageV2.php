@@ -414,6 +414,7 @@ class ImportPageV2 extends Page implements Tables\Contracts\HasTable, Forms\Cont
                     ->icon('heroicon-s-arrow-down-tray')
                     ->button()
                     ->color('primary')
+                    ->visible(fn(Product $record) => !in_array($record->id, array_column($this->formData['items'] ?? [], 'product_id')))
                     ->form([
                         Forms\Components\Placeholder::make('current_stock')
                             ->label('Current Stock')
