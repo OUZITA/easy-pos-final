@@ -420,12 +420,15 @@ class SaleResource extends Resource
                             ->hiddenLabel(),
 
                         Grid::make(1)
-                            ->columnSpan(1) // optional if inside another grid
+                            ->columnSpan(2) // optional if inside another grid
                             ->schema([
                                 TextEntry::make('total_amount')
                                     ->label('Total Amount')
-                                    ->state(fn($record) => $record->total_price)
-                                    ->money('USD')
+                                    ->state(function ($record) {
+                                        $usdAmount = $record->total_price;
+                                        $rielAmount = round($usdAmount * 4000, -2); // Convert to Riel and round to nearest 100
+                                        return '$' . number_format($usdAmount, 2) . ' / KHR' . number_format($rielAmount, 0);
+                                    })
                                     ->size('lg')
                                     //->weight(FontWeight::Bold)
                                     ->color('success')
@@ -436,8 +439,11 @@ class SaleResource extends Resource
 
                                 TextEntry::make('payment')
                                     ->label('Paid Amount')
-                                    ->state(fn($record) => $record->total_pay)
-                                    ->money('USD')
+                                    ->state(function ($record) {
+                                        $usdAmount = $record->total_pay;
+                                        $rielAmount = round($usdAmount * 4000, -2); // Convert to Riel and round to nearest 100
+                                        return '$' . number_format($usdAmount, 2) . ' / KHR' . number_format($rielAmount, 0);
+                                    })
                                     ->size('lg')
                                     //->weight(FontWeight::Bold)
                                     ->color('info')

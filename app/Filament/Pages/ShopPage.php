@@ -55,6 +55,7 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
     public ?array $formData = [
         'items' => [],
         'customer_id' => null,
+        'currency' => 'usd',
     ];
 
 
@@ -228,76 +229,93 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                     // Step 2: Select customer and checkout
                     Step::make('Customer & Checkout')
                         ->schema([
-                            Forms\Components\Select::make('customer_id')
-                                ->label('Select Customer')
-                                ->options(\App\Models\Customer::where('active', true)->pluck('name', 'id'))
-                                ->searchable()
-                                ->required()
-                                ->reactive()
-                                ->visible(fn($get) => !empty($get('items')))
-                                ->createOptionForm([
-                                    Forms\Components\TextInput::make('name')
+                            Grid::make(2)
+                                ->schema([
+                                    Forms\Components\Select::make('customer_id')
+                                        ->label('Select Customer')
+                                        ->options(\App\Models\Customer::where('active', true)->pluck('name', 'id'))
+                                        ->searchable()
                                         ->required()
-                                        ->maxLength(255),
-                                    Forms\Components\TextInput::make('phone')
-                                        ->maxLength(255),
-                                ])
-                                ->createOptionUsing(function (array $data) {
-                                    return \App\Models\Customer::create($data)->id;
-                                }),
-                            Grid::make(3) // ✅ use a number, not a string
+                                        ->reactive()
+                                        ->visible(fn($get) => !empty($get('items')))
+                                        ->createOptionForm([
+                                            Forms\Components\TextInput::make('name')
+                                                ->required()
+                                                ->maxLength(255),
+                                            Forms\Components\TextInput::make('phone')
+                                                ->maxLength(255),
+                                        ])
+                                        ->createOptionUsing(function (array $data) {
+                                            return \App\Models\Customer::create($data)->id;
+                                        }),
+                                    Forms\Components\Select::make('currency')
+                                        ->label('Currency')
+                                        ->options([
+                                            'usd' => 'USD ($)',
+                                            'khr' => 'KHR (KHR)',
+                                        ])
+                                        ->default('usd')
+                                        ->required()
+                                        ->live() // allows reactive changes
+                                        ->afterStateUpdated(function ($state, callable $set) {
+                                            // Reset payment field when currency changes
+                                            $set('total_pay', null);
+                                        }),
+                                ]),
+                            Grid::make(4) // ✅ use a number, not a string
                                 ->schema([
                                     Placeholder::make('total')
                                         ->label('Total Amount')
                                         ->content(fn() => '$' . number_format($this->getTotalAmount(), 2)),
-                                    /* Placeholder::make('total_in_riel')
+                                    Placeholder::make('total_in_riel')
                                         ->label('In Riel')
-                                        ->content(fn() => '៛' . number_format(
-                                            round($this->getTotalAmount() * 4100, -2), // ✅ rounded to nearest 100
+                                        ->content(fn() => 'KHR' . number_format(
+                                            round($this->getTotalAmount() * 4000, -2), // ✅ rounded to nearest 100
                                             0
-                                        )), */
+                                        )),
 
-                                    TextInput::make('total_pay') // store in DB
+                                    TextInput::make('total_pay')
                                         ->numeric()
                                         ->label('Payment')
                                         ->extraAttributes([
                                             'onkeydown' => "
-            if(['e','E','+','-'].includes(event.key)) event.preventDefault();
-            if(event.key === '0' && event.target.value.length === 0) {
-                event.preventDefault();
-            }
-        ",
+    if(['e','E','+','-'].includes(event.key)) event.preventDefault();
+    if(event.key === '0' && event.target.value.length === 0) {
+        event.preventDefault();
+    }
+",
                                             'oninput' => "
-            if(this.value.length > 1) {
-                this.value = this.value.replace(/^0+/, '');
-                if(this.value === '') this.value = 0;
-            }
-            if(parseFloat(this.value) < 0 || this.value === '') {
-                this.value = 0;
-            }
-        ",
-                                            'data-total-amount' => $this->getTotalAmount(),
-
+    if(this.value.length > 1) {
+        this.value = this.value.replace(/^0+/, '');
+        if(this.value === '') this.value = 0;
+    }
+    if(parseFloat(this.value) < 0 || this.value === '') {
+        this.value = 0;
+    }
+",
                                         ])
                                         ->minValue(0)
-                                        ->prefix('$')
+                                        ->prefix(fn($get) => $get('currency') === 'usd' ? '$' : 'KHR')
                                         ->required()
-                                        ->lazy() // updates change instantly
-                                        ->afterStateUpdated(function ($state, callable $set) {
-                                            // Remove leading zeros
-                                            $state = ltrim((string)$state, '0');
+                                        ->lazy()
+                                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                            $currency = $get('currency') ?? 'usd';
+                                            $exchangeRate = 4000;
 
-                                            // Ensure numeric
+                                            // Clean input
+                                            $state = ltrim((string) $state, '0');
                                             if ($state === '' || !is_numeric($state)) {
                                                 $state = 0;
                                             }
+                                            $state = (float) $state;
 
-                                            // Convert to float
-                                            $state = (float)$state;
-
+                                            // Calculate required total in selected currency
                                             $total = $this->getTotalAmount();
+                                            if ($currency === 'khr') {
+                                                $total *= $exchangeRate;
+                                            }
 
-                                            // If under total, enforce minimum and show notification
+                                            // Validate
                                             if ($state < $total) {
                                                 Notification::make()
                                                     ->title('Insufficient Payment')
@@ -305,28 +323,32 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                                     ->warning()
                                                     ->send();
 
-                                                $state = $total; // enforce minimum
+                                                $state = $total;
                                             }
 
-                                            // Save to DB
+                                            // Keep user input as-is in form (don't normalize here)
                                             $set('total_pay', $state);
                                         }),
 
                                     Placeholder::make('change')
                                         ->label('Change')
-                                        ->content(fn($get) => '$' . number_format(max(0, $get('total_pay') -
-                                            $this->getTotalAmount()), 2)),
-                                    //   
+                                        ->content(function ($get) {
+                                            $currency = $get('currency') ?? 'usd';
+                                            $total = $this->getTotalAmount();
+                                            $pay = $get('total_pay') ?? 0;
 
-                                    // Forms\Components\Select::make('currency')
-                                    //     ->label('Currency')
-                                    //     ->options([
-                                    //         'usd' => 'USD ($)',
-                                    //         'khr' => 'KHR (៛)',
-                                    //     ])
-                                    //     ->default('usd')
-                                    //     ->required()
-                                    //     ->live(), // allows reactive changes
+                                            if ($currency === 'khr') {
+                                                $exchangeRate = 4000;
+                                                $total = $total * $exchangeRate;
+                                                $symbol = 'KHR';
+                                            } else {
+                                                $symbol = '$';
+                                            }
+
+                                            $change = max(0, $pay - $total);
+
+                                            return $symbol . number_format($change, 2);
+                                        }),
 
 
                                     //                                 TextInput::make('total_pay')
@@ -488,12 +510,20 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
         try {
             $sale = null;
             DB::transaction(function () use ($items, $customerId) {
+                // Convert payment to USD before saving to database
+                $paymentAmount = $this->formData['total_pay'] ?? 0;
+                $currency = $this->formData['currency'] ?? 'usd';
+
+                if ($currency === 'khr') {
+                    $paymentAmount = $paymentAmount / 4000; // Convert Riel to USD
+                }
+
                 // Create the main sale record with proper customer_id
                 $sale = Sale::create([
                     'user_id' => auth()->id(),
                     'customer_id' => $customerId,
                     'sale_date' => now(),
-                    'total_pay' => $this->formData['total_pay'] ?? 0,
+                    'total_pay' => round($paymentAmount, 2), // Always store in USD
                     // 'total_amount' => $this->getTotalAmount(),
                 ]);
 
@@ -526,6 +556,7 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
             // Clear cart and customer selection after successful checkout
             $this->formData['items'] = [];
             $this->formData['customer_id'] = null;
+            $this->formData['currency'] = 'usd';
 
 
             Notification::make()

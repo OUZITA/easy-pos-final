@@ -6,120 +6,118 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
-    <head>
+    <title>Receipt</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            font-size: 13px;
+            /* slightly larger than 12px */
+        }
 
-        <title>Receipt</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                margin: 0;
-                padding: 0;
-                font-size: 13px;
-                /* slightly larger than 12px */
-            }
+        .receipt {
+            width: 190mm;
+            margin: 10px auto;
+            padding: 9px;
+            /* medium padding */
+            border: 1px solid #ffffff;
+        }
 
+        h1 {
+            font-size: 1.3em;
+            /* between 1.2 and 1.5 */
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            font-size: 1.05em;
+            /* slightly larger */
+            text-align: left;
+            margin-bottom: 2px;
+        }
+
+        p {
+            font-size: 0.95em;
+            /* slightly larger than 0.9 */
+            margin: 2px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+            /* between 0.85 and 1 */
+        }
+
+        th,
+        td {
+            border: 1px solid #eee;
+            padding: 5px;
+            /* medium padding */
+            text-align: left;
+        }
+
+        th {
+            background-color: #ffffff;
+        }
+
+        .total {
+            font-weight: bold;
+            text-align: right;
+            font-size: 1em;
+            /* slightly bigger than 0.95 */
+        }
+
+        .signature-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            /* medium spacing */
+            width: 100%;
+            gap: 15px;
+        }
+
+        .signature-section {
+            width: 45%;
+            text-align: center;
+        }
+
+        .signature_buy,
+        .signature_sell {
+            margin-top: 20px;
+            margin-bottom: 40px;
+        }
+
+        .receipt-details-table {
+            font-size: 0.8em;
+            /* medium size for table */
+        }
+
+        .receipt-details {
+            font-size: 0.8em;
+            font-style: italic;
+            margin-top: 5px;
+        }
+
+        @media print {
             .receipt {
-                width: 190mm;
-                margin: 10px auto;
-                padding: 9px;
-                /* medium padding */
-                border: 1px solid #ffffff;
-            }
-
-            h1 {
-                font-size: 1.3em;
-                /* between 1.2 and 1.5 */
-                text-align: center;
-                margin-bottom: 5px;
-            }
-
-            h2 {
-                font-size: 1.05em;
-                /* slightly larger */
-                text-align: left;
-                margin-bottom: 2px;
-            }
-
-            p {
-                font-size: 0.95em;
-                /* slightly larger than 0.9 */
-                margin: 2px 0;
-            }
-
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 0.9em;
-                /* between 0.85 and 1 */
-            }
-
-            th,
-            td {
-                border: 1px solid #eee;
+                width: 80mm;
+                margin: 0;
                 padding: 5px;
-                /* medium padding */
-                text-align: left;
+                border: none;
             }
 
-            th {
-                background-color: #ffffff;
+            body {
+                font-size: 11px;
+                /* medium print size */
             }
-
-            .total {
-                font-weight: bold;
-                text-align: right;
-                font-size: 1em;
-                /* slightly bigger than 0.95 */
-            }
-
-            .signature-container {
-                display: flex;
-                justify-content: space-between;
-                margin-top: 40px;
-                /* medium spacing */
-                width: 100%;
-                gap: 15px;
-            }
-
-            .signature-section {
-                width: 45%;
-                text-align: center;
-            }
-
-            .signature_buy,
-            .signature_sell {
-                margin-top: 20px;
-                margin-bottom: 40px;
-            }
-
-            .receipt-details-table {
-                font-size: 0.8em;
-                /* medium size for table */
-            }
-
-            .receipt-details {
-                font-size: 0.8em;
-                font-style: italic;
-                margin-top: 5px;
-            }
-
-            @media print {
-                .receipt {
-                    width: 80mm;
-                    margin: 0;
-                    padding: 5px;
-                    border: none;
-                }
-
-                body {
-                    font-size: 11px;
-                    /* medium print size */
-                }
-            }
-        </style>
+        }
+    </style>
 
 
-    </head>
+
 </head>
 
 <body onload="window.print()">
@@ -186,8 +184,10 @@
         </p> --}}
 
         <p class="total">Total Amount:.....................${{ number_format($subTotal - $sale->discount_amount, 2) }}
+            / KHR {{ number_format(($subTotal - $sale->discount_amount) * 4000, 0) }}
         </p>
-        <p class="total">Paid Amount:.....................${{ number_format($sale->total_pay, 2) }}
+        <p class="total">Paid Amount:.....................${{ number_format($sale->total_pay, 2) }} /
+            KHR {{ number_format($sale->total_pay * 4000, 0) }}
         </p>
         <p class="total">________________</p>
         <div class = "receipt-details">

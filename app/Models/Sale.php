@@ -117,18 +117,5 @@ class Sale extends Model
             get: fn() => max(0, (float) $this->total_pay - (float) $this->total_price)
         );
     }
-    protected function totalPay(): Attribute
-    {
-        return Attribute::make(
-            set: function ($value, $attributes) {
-                $exchangeRate = 4100;
-
-                if (($attributes['currency'] ?? 'usd') === 'khr') {
-                    return round($value / $exchangeRate, 2); // always USD
-                }
-
-                return (float) $value;
-            }
-        );
-    }
+    // Removed totalPay attribute setter - conversion now handled in ShopPage checkout method
 }

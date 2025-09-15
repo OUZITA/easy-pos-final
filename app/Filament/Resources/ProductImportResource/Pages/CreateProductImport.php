@@ -42,14 +42,14 @@ class CreateProductImport extends CreateRecord
         }
     }
 
-    protected function getFormActions(): array
+    /* protected function getFormActions(): array
     {
         return [
             CreateAction::make()
                 ->label('Stock In')
                 ->color('success'),
         ];
-    }
+    } */
 
     protected function getHeaderActions(): array
     {
