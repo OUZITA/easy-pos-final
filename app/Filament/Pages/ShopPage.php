@@ -252,7 +252,7 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                         ->label('Currency')
                                         ->options([
                                             'usd' => 'USD ($)',
-                                            'khr' => 'KHR (KHR)',
+                                            'khr' => 'KHR (៛)',
                                         ])
                                         ->default('usd')
                                         ->required()
@@ -269,7 +269,7 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                         ->content(fn() => '$' . number_format($this->getTotalAmount(), 2)),
                                     Placeholder::make('total_in_riel')
                                         ->label('In Riel')
-                                        ->content(fn() => 'KHR' . number_format(
+                                        ->content(fn() => '៛' . number_format(
                                             round($this->getTotalAmount() * 4000, -2), // ✅ rounded to nearest 100
                                             0
                                         )),
@@ -295,7 +295,7 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
 ",
                                         ])
                                         ->minValue(0)
-                                        ->prefix(fn($get) => $get('currency') === 'usd' ? '$' : 'KHR')
+                                        ->prefix(fn($get) => $get('currency') === 'usd' ? '$' : '៛')
                                         ->required()
                                         ->lazy()
                                         ->afterStateUpdated(function ($state, callable $set, callable $get) {
@@ -340,7 +340,7 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                             if ($currency === 'khr') {
                                                 $exchangeRate = 4000;
                                                 $total = $total * $exchangeRate;
-                                                $symbol = 'KHR';
+                                                $symbol = '៛';
                                             } else {
                                                 $symbol = '$';
                                             }

@@ -427,7 +427,7 @@ class SaleResource extends Resource
                                     ->state(function ($record) {
                                         $usdAmount = $record->total_price;
                                         $rielAmount = round($usdAmount * 4000, -2); // Convert to Riel and round to nearest 100
-                                        return '$' . number_format($usdAmount, 2) . ' / KHR' . number_format($rielAmount, 0);
+                                        return '$' . number_format($usdAmount, 2) . ' / KHR ' . number_format($rielAmount, 0);
                                     })
                                     ->size('lg')
                                     //->weight(FontWeight::Bold)
@@ -442,7 +442,7 @@ class SaleResource extends Resource
                                     ->state(function ($record) {
                                         $usdAmount = $record->total_pay;
                                         $rielAmount = round($usdAmount * 4000, -2); // Convert to Riel and round to nearest 100
-                                        return '$' . number_format($usdAmount, 2) . ' / KHR' . number_format($rielAmount, 0);
+                                        return '$' . number_format($usdAmount, 2) . ' / KHR ' . number_format($rielAmount, 0);
                                     })
                                     ->size('lg')
                                     //->weight(FontWeight::Bold)

@@ -26,6 +26,10 @@ use function Livewire\of;
 //     return view('welcome');
 // });
 Route::get('/receipt/print/{sale}', [ReceiptController::class, 'print'])->name('receipt.print');
+
+// OTP Password Reset Routes
+Route::get('/admin/verify-otp', \App\Filament\Pages\Auth\VerifyOtp::class)->name('verify-otp');
+Route::get('/admin/reset-password', \App\Filament\Pages\Auth\ResetPassword::class)->name('reset-password');
 Artisan::command('test', function () {
     // What is Laravel Trend ?
     // What does it use for?

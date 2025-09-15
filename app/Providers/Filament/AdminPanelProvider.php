@@ -10,6 +10,9 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages;
 use App\Filament\Pages\Auth\EditProfile;
 use App\Filament\Pages\Auth\Login;
+use App\Filament\Pages\Auth\RequestPasswordReset;
+use App\Filament\Pages\Auth\VerifyOtp;
+use App\Filament\Pages\Auth\ResetPassword;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\ImportPageV2;
 use App\Filament\Pages\ImportPageV3;
@@ -43,8 +46,8 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->globalSearch(false)
             ->path('admin')
-            ->login(Login::class)
-            ->passwordReset()
+            ->login(/* Login::class */)
+            ->passwordReset(RequestPasswordReset::class)
             ->registration(Register::class)
             ->emailVerification()
             ->colors([
@@ -64,7 +67,9 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
                 ImportPageV2::class,
-                ImportPageV3::class
+                ImportPageV3::class,
+                VerifyOtp::class,
+                ResetPassword::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             // ->widgets([
