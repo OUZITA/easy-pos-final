@@ -274,7 +274,8 @@ class SaleResource extends Resource
             ])
 
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                /* ->modalHeading('Sale Information') */,
                 // Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
                     ->before(function (Sale $record) {

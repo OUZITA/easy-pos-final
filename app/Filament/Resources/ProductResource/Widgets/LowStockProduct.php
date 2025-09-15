@@ -24,7 +24,7 @@ class LowStockProduct extends BaseWidget
     {
         return $table
             ->query(
-                ProductResource::getEloquentQuery()->whereColumn('stock', '<=', 'stock_security')->where('active', true)->where('stock', '>', 0)
+                ProductResource::getEloquentQuery()->whereColumn('stock', '<', 'stock_security')->where('active', true)->where('stock', '>', 0)
             )
             ->defaultSort('stock', 'asc')
             ->defaultPaginationPageOption(5)
@@ -44,10 +44,12 @@ class LowStockProduct extends BaseWidget
                     ->weight(FontWeight::Bold)
                     ->money()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('stock')
+                TextColumn::make('stock')
+                    ->label('Current Stock')
                     ->sortable()
                     ->weight(FontWeight::Bold)
                     ->badge()
+                    ->formatStateUsing(fn($state) => $state > 0 ? "In Stock: {$state}" : 'Out of Stock')
                     ->color(
                         fn($record) =>
                         $record->stock <= 0 ? 'danger' : ($record->stock <= $record->stock_security ? 'warning' : 'success')
@@ -58,7 +60,7 @@ class LowStockProduct extends BaseWidget
                     )
                     ->tooltip(
                         fn($record) =>
-                        $record->stock <= 0 ? 'Out of stock' : ($record->stock <= $record->stock_security ? 'Low stock - below security level' : 'Stock level is good')
+                        $record->stock <= 0 ? 'Out of stock (security level: ' . $record->stock_security . ')' : ($record->stock <= $record->stock_security ? 'Low stock - Under safe Qty of ' . $record->stock_security : 'Stock level is good (above ' . $record->stock_security . ')')
                     ),
 
                 Tables\Columns\TextColumn::make('brand.name')
@@ -68,11 +70,7 @@ class LowStockProduct extends BaseWidget
                 Tables\Columns\TextColumn::make('category.name')
                     ->badge()
                     ->color('info'),
-                Tables\Columns\TextColumn::make('sale_items_sum_qty')
-                    ->label('Sold Count')
-                    ->weight(FontWeight::Bold)
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+
 
                 Tables\Columns\TextColumn::make('description')
                     ->toggleable(true)

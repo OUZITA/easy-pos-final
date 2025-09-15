@@ -167,7 +167,7 @@
                     @endphp
                     <tr>
                         <td>{{ $item->product->name }}</td>
-                        <td style="min-height:50px; display:block; overflow:hidden;">
+                        <td style="min-height:50px;  overflow:hidden;">
                             {{ \Illuminate\Support\Str::limit(strip_tags($item->product->description ?? '-'), 200, '...') }}
                         </td>
 

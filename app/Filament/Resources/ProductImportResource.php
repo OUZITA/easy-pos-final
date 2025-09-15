@@ -40,6 +40,7 @@ class ProductImportResource extends Resource
     protected static ?string $navigationGroup = 'Inventory';
 
     protected static ?int $navigationSort = 1;
+
     public static function getNavigationLabel(): string
     {
         return 'Stock In'; // 👈 Change this to whatever you want
@@ -267,17 +268,17 @@ class ProductImportResource extends Resource
     {
         return $infolist
             ->schema([
-                \Filament\Infolists\Components\Section::make('Product Import Information')
+                \Filament\Infolists\Components\Section::make('Product Stock in Information')
                     ->schema([
                         Grid::make(3)
                             ->schema([
                                 TextEntry::make('id')
-                                    ->label('Import ID')
+                                    ->label('Stock in ID')
                                     ->badge()
                                     ->color('primary'),
 
                                 TextEntry::make('import_date')
-                                    ->label('Import Date')
+                                    ->label('Stock in Date')
                                     ->date('d/m/Y')
                                     ->icon('heroicon-o-calendar-days'),
 
@@ -525,7 +526,9 @@ class ProductImportResource extends Resource
             ])
             ->searchable()
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->modalHeading('Stock In Information'), // 👈 disables "View Stock In"
+                //->label('Details'), // optional custom label,
                 // Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
                     ->before(function (ProductImport $record) {
