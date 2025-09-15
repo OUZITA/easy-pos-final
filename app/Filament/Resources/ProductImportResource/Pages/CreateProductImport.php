@@ -20,6 +20,50 @@ class CreateProductImport extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        // Check for products where unit price is over current selling price
+        $highPriceProducts = [];
+        if (isset($data['items']) && is_array($data['items'])) {
+            foreach ($data['items'] as $item) {
+                if (isset($item['product_id']) && isset($item['unit_price'])) {
+                    $product = Product::find($item['product_id']);
+                    if ($product && $product->price > 0 && $item['unit_price'] > $product->price) {
+                        $highPriceProducts[] = [
+                            'name' => $product->name,
+                            'current_price' => $product->price,
+                            'import_price' => $item['unit_price'],
+                        ];
+                    }
+                }
+            }
+        }
+
+        // If there are high-priced products, require confirmation
+        if (!empty($highPriceProducts)) {
+            // Check if user has confirmed
+            if (!isset($data['confirm_high_price']) || $data['confirm_high_price'] !== true) {
+                $this->addError('confirm_high_price', 'Please confirm that you want to import products at prices higher than their current selling prices.');
+
+                // Show notification with details
+                $message = "The following products have import prices higher than their current selling prices:\n\n";
+                foreach ($highPriceProducts as $product) {
+                    $message .= "- {$product['name']}: Current $" . number_format($product['current_price'], 2) . " → Import $" . number_format($product['import_price'], 2) . "\n";
+                }
+                $message .= "\nPlease check the confirmation box to proceed.";
+
+                Notification::make()
+                    ->title('High Price Import Warning')
+                    ->body($message)
+                    ->warning()
+                    ->persistent()
+                    ->send();
+
+                return $data; // Return without processing to show the form again
+            }
+        }
+
+        // Remove confirmation field as it's not needed in the database
+        unset($data['confirm_high_price']);
+
         $data['user_id'] = auth()->id();
         $data['import_date'] = now();
         return $data;

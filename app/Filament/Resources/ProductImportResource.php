@@ -126,8 +126,26 @@ class ProductImportResource extends Resource
                                     ->required()
                                     ->lazy()
                                     ->extraAttributes([
-                                        'onkeydown' => "if(['e','E','+','-'].includes(event.key)) event.preventDefault();",
-                                        'oninput' => "if(this.value.length > 1) this.value = this.value.replace(/^0+/, ''); if(parseFloat(this.value) < 0) this.value = 0;",
+                                        'onkeydown' => "
+            // Block e, E, +, -
+            if(['e','E','+','-'].includes(event.key)) event.preventDefault();
+
+            // Prevent leading zero if field is empty
+            if(event.key === '0' && event.target.value.length === 0) {
+                event.preventDefault();
+            }
+        ",
+                                        'oninput' => "
+            // Remove leading zeros
+            if(this.value.length > 1) {
+                this.value = this.value.replace(/^0+/, '');
+                if(this.value === '') this.value = 0;
+            }
+            // Enforce min 0
+            if(parseFloat(this.value) < 0 || this.value === '') {
+                this.value = 0;
+            }
+        ",
                                     ])
                                     ->afterStateUpdated(function ($state, callable $set) {
                                         $state = ltrim((string) $state, '0');
@@ -180,8 +198,8 @@ class ProductImportResource extends Resource
                                     ->tel(),
                                 Forms\Components\Textarea::make('address')
                                     ->label('Address'),
-                                Forms\Components\TextInput::make('bank_account')
-                                    ->label('Bank Account'),
+                                Forms\Components\TextInput::make('bank_name')
+                                    ->label('Bank Account Name'),
                                 Forms\Components\TextInput::make('account_number')
                                     ->label('Account Number'),
                                 Forms\Components\Textarea::make('description')
@@ -197,6 +215,49 @@ class ProductImportResource extends Resource
                             ->required(),
                         Forms\Components\RichEditor::make('note')
                             ->columnSpan('full'),
+                        // Confirmation checkbox for high-priced imports
+                        Forms\Components\Checkbox::make('confirm_high_price')
+                            ->label('I confirm that I want to import products at prices higher than their current selling prices')
+                            ->visible(function ($get) {
+                                $items = $get('items') ?? [];
+                                foreach ($items as $item) {
+                                    if (isset($item['product_id']) && isset($item['unit_price'])) {
+                                        $product = Product::find($item['product_id']);
+                                        if ($product && $product->price > 0 && $item['unit_price'] > $product->price) {
+                                            return true;
+                                        }
+                                    }
+                                }
+                                return false;
+                            })
+                            ->required(function ($get) {
+                                $items = $get('items') ?? [];
+                                foreach ($items as $item) {
+                                    if (isset($item['product_id']) && isset($item['unit_price'])) {
+                                        $product = Product::find($item['product_id']);
+                                        if ($product && $product->price > 0 && $item['unit_price'] > $product->price) {
+                                            return true;
+                                        }
+                                    }
+                                }
+                                return false;
+                            })
+                            ->helperText(function ($get) {
+                                $highPriceProducts = [];
+                                $items = $get('items') ?? [];
+                                foreach ($items as $item) {
+                                    if (isset($item['product_id']) && isset($item['unit_price'])) {
+                                        $product = Product::find($item['product_id']);
+                                        if ($product && $product->price > 0 && $item['unit_price'] > $product->price) {
+                                            $highPriceProducts[] = $product->name . ' (Current: $' . number_format($product->price, 2) . ' → Import: $' . number_format($item['unit_price'], 2) . ')';
+                                        }
+                                    }
+                                }
+                                if (!empty($highPriceProducts)) {
+                                    return 'High-priced products: ' . implode(', ', $highPriceProducts);
+                                }
+                                return '';
+                            }),
                     ])->columns(2),
 
             ]);

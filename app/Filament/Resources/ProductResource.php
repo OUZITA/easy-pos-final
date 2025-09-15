@@ -134,25 +134,15 @@ class ProductResource extends Resource
                                     ->numeric()
                                     ->lazy()
                                     ->extraAttributes([
+                                        'step' => '1',
                                         'onkeydown' => "
-            // Block e, E, +, -
-            if(['e','E','+','-'].includes(event.key)) event.preventDefault();
-
-            // Prevent leading zero if field is empty
-            if(event.key === '0' && event.target.value.length === 0) {
-                event.preventDefault();
-            }
+            if(['e','E','+','-','.'].includes(event.key)) event.preventDefault();
+            if(event.key === '0' && event.target.value.length === 0) event.preventDefault();
         ",
                                         'oninput' => "
-            // Remove leading zeros
-            if(this.value.length > 1) {
-                this.value = this.value.replace(/^0+/, '');
-                if(this.value === '') this.value = 0;
-            }
-            // Enforce min 0
-            if(parseFloat(this.value) < 0 || this.value === '') {
-                this.value = 0;
-            }
+            this.value = this.value.replace(/^0+/, ''); 
+            if(this.value === '' || parseInt(this.value) < 1) this.value = 1;
+            this.value = this.value.replace(/[^0-9]/g, ''); 
         ",
                                     ])
                                     ->minValue(1)
