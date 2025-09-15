@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 class CreateProductImport extends CreateRecord
 {
     protected static string $resource = ProductImportResource::class;
+    protected static ?string $title = 'Create Stock in';
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
@@ -72,10 +73,18 @@ class CreateProductImport extends CreateRecord
                                 ->label('Price')
                                 ->required()
                                 ->numeric()
+                                ->rule('numeric')
+                                ->step('0.01')
                                 ->lazy()
                                 ->extraAttributes([
-                                    'onkeydown' => "if(['e','E','+','-'].includes(event.key)) event.preventDefault();",
-                                    'oninput' => "if(this.value.length > 1) this.value = this.value.replace(/^0+/, ''); if(parseFloat(this.value) < 0.01) this.value = 0.01;",
+                                    'onkeydown' => "
+                                        if(['e','E','+','-'].includes(event.key)) event.preventDefault();
+                                        if(event.key === '0' && event.target.value.length === 0) event.preventDefault();
+                                    ",
+                                    'oninput' => "
+                                        if(this.value.length > 1) this.value = this.value.replace(/^0+/, '');
+                                        if(this.value === '' || parseFloat(this.value) < 0) this.value = 0;
+                                    ",
                                 ])
                                 ->prefix('$')
                                 ->placeholder('0.00')
@@ -112,10 +121,19 @@ class CreateProductImport extends CreateRecord
                                 ->numeric()
                                 ->lazy()
                                 ->extraAttributes([
-                                    'onkeydown' => "if(['e','E','+','-'].includes(event.key)) event.preventDefault();",
-                                    'oninput' => "if(this.value.length > 1) this.value = this.value.replace(/^0+/, ''); if(parseFloat(this.value) < 1) this.value = 1;",
+                                    'step' => '1',
+                                    'onkeydown' => "
+            if(['e','E','+','-','.'].includes(event.key)) event.preventDefault();
+            if(event.key === '0' && event.target.value.length === 0) event.preventDefault();
+        ",
+                                    'oninput' => "
+            this.value = this.value.replace(/^0+/, ''); 
+            if(this.value === '' || parseInt(this.value) < 1) this.value = 1;
+            this.value = this.value.replace(/[^0-9]/g, ''); 
+        ",
                                 ])
                                 ->minValue(1),
+
                         ]),
                     Forms\Components\RichEditor::make('description')
                         ->label('Product Description')

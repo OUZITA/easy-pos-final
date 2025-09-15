@@ -9,18 +9,18 @@ use Filament\Resources\Pages\ListRecords;
 class ListProductImports extends ListRecords
 {
     protected static string $resource = ProductImportResource::class;
-    protected static ?string $title = 'Product Import History';
+    protected static ?string $title = 'Product Stock in History';
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()
+            /*  Actions\CreateAction::make()
                 ->label('Add Stock')
-                ->url('import-pagev2'),
-            // Actions\Action::make('sd')
-            //     ->color('danger')
-            //     ->url(SaleResource::getUrl('create'))
-            //     ->label('Dumb Sale'),
+                ->url('import-pagev2'), */
+            Actions\Action::make('sd')
+                //->color('danger')
+                ->url(ProductImportResource::getUrl('create'))
+                ->label('Add Stock'),
         ];
     }
 }

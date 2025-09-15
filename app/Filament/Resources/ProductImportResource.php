@@ -53,6 +53,7 @@ class ProductImportResource extends Resource
                     ->schema([
                         Repeater::make('items')
                             ->relationship()
+                            ->addActionLabel('Add More')
                             ->schema([
                                 Forms\Components\Select::make('product_id')
                                     ->label('Product')
@@ -78,6 +79,7 @@ class ProductImportResource extends Resource
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                                     ->searchable()
                                     ->columnSpanFull()
+
                                     ->afterStateUpdated(
                                         fn($state, callable $set) =>
                                         $set('unit_price', \App\Models\Product::find($state)?->price ?? 0)
@@ -166,6 +168,7 @@ class ProductImportResource extends Resource
                             ->relationship('supplier', 'name', modifyQueryUsing: fn(Builder $query) => $query->where('active', true))
                             ->preload()
                             ->searchable()
+                            ->columnSpanFull()
                             ->required()
                             ->createOptionForm([
                                 Forms\Components\TextInput::make('name')
@@ -371,7 +374,7 @@ class ProductImportResource extends Resource
                     ->weight(FontWeight::Bold),
 
                 Tables\Columns\TextColumn::make('import_date')
-                    ->label('Import Date')
+                    ->label('Stock in Date')
                     ->date('d/m/Y')
                     ->dateTooltip('d/M/Y')
                     ->sortable(),
@@ -387,7 +390,7 @@ class ProductImportResource extends Resource
 
                 Tables\Columns\TextColumn::make('user.name')
                     ->toggleable()
-                    ->label('Imported By'),
+                    ->label('Stock in By'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -401,9 +404,9 @@ class ProductImportResource extends Resource
                 Filter::make('import_date')
                     ->form([
                         DatePicker::make('import_from')
-                            ->label('Import From'),
+                            ->label('Stock in From'),
                         DatePicker::make('import_util')
-                            ->label('Import Until'),
+                            ->label('Stock in Until'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query

@@ -279,25 +279,45 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                         ->label('Payment')
                                         ->extraAttributes([
                                             'onkeydown' => "
-    if(['e','E','+','-'].includes(event.key)) event.preventDefault();
-    if(event.key === '0' && event.target.value.length === 0) {
-        event.preventDefault();
-    }
-",
+            if(['e','E','+','-'].includes(event.key)) event.preventDefault();
+            if(event.key === '0' && event.target.value.length === 0) {
+                event.preventDefault();
+            }
+        ",
                                             'oninput' => "
-    if(this.value.length > 1) {
-        this.value = this.value.replace(/^0+/, '');
-        if(this.value === '') this.value = 0;
-    }
-    if(parseFloat(this.value) < 0 || this.value === '') {
-        this.value = 0;
-    }
-",
+            if(this.value.length > 1) {
+                this.value = this.value.replace(/^0+/, '');
+                if(this.value === '') this.value = 0;
+            }
+            if(parseFloat(this.value) < 0 || this.value === '') {
+                this.value = 0;
+            }
+        ",
                                         ])
                                         ->minValue(0)
+                                        ->step(fn($get) => $get('currency') === 'khr' ? 100 : 1)
                                         ->prefix(fn($get) => $get('currency') === 'usd' ? '$' : '៛')
                                         ->required()
                                         ->lazy()
+                                        ->live(onBlur: true)
+                                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                            $currency = $get('currency') ?? 'usd';
+
+                                            // For Riel, remove decimals and round to nearest 100
+                                            if ($currency === 'khr' && $state !== null) {
+                                                $value = (float) $state;
+                                                // First remove decimals by flooring
+                                                $wholeNumber = floor($value);
+                                                // Then round to nearest 100: 1-49→0, 50-99→100
+                                                $remainder = $wholeNumber % 100;
+                                                if ($remainder >= 50) {
+                                                    $rounded = $wholeNumber + (100 - $remainder);
+                                                } else {
+                                                    $rounded = $wholeNumber - $remainder;
+                                                }
+                                                $set('total_pay', $rounded);
+                                            }
+                                        })
                                         ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                             $currency = $get('currency') ?? 'usd';
                                             $exchangeRate = 4000;
@@ -311,11 +331,17 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
 
                                             // Calculate required total in selected currency
                                             $total = $this->getTotalAmount();
+
                                             if ($currency === 'khr') {
                                                 $total *= $exchangeRate;
                                             }
 
-                                            // Validate
+                                            // Define max allowed
+                                            $maxAllowed = $currency === 'usd'
+                                                ? $total + 100
+                                                : $total + 400000;
+
+                                            // Validate lower bound
                                             if ($state < $total) {
                                                 Notification::make()
                                                     ->title('Insufficient Payment')
@@ -326,9 +352,25 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                                 $state = $total;
                                             }
 
-                                            // Keep user input as-is in form (don't normalize here)
+                                            // Validate upper bound
+                                            if ($state > $maxAllowed) {
+                                                Notification::make()
+                                                    ->title('Excess Payment')
+                                                    ->body(
+                                                        $currency === 'usd'
+                                                            ? 'Payment cannot exceed the total amount by more than $100.'
+                                                            : 'Payment cannot exceed the total amount by more than ៛400,000.'
+                                                    )
+                                                    ->warning()
+                                                    ->send();
+
+                                                $state = $maxAllowed;
+                                            }
+
                                             $set('total_pay', $state);
                                         }),
+
+
 
                                     Placeholder::make('change')
                                         ->label('Change')
@@ -341,99 +383,16 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                                 $exchangeRate = 4000;
                                                 $total = $total * $exchangeRate;
                                                 $symbol = '៛';
+                                                $decimals = 0; // No decimals for Riel
                                             } else {
                                                 $symbol = '$';
+                                                $decimals = 2; // 2 decimals for USD
                                             }
 
                                             $change = max(0, $pay - $total);
 
-                                            return $symbol . number_format($change, 2);
+                                            return $symbol . number_format($change, $decimals);
                                         }),
-
-
-                                    //                                 TextInput::make('total_pay')
-                                    //                                 ->numeric()
-                                    //                                 ->label('Payment')
-                                    //                                 ->extraAttributes([
-                                    //                                     'onkeydown' => "
-                                    //     if(['e','E','+','-'].includes(event.key)) event.preventDefault();
-                                    //     if(event.key === '0' && event.target.value.length === 0) {
-                                    //         event.preventDefault();
-                                    //     }
-                                    // ",
-                                    //                                     'oninput' => "
-                                    //     if(this.value.length > 1) {
-                                    //         this.value = this.value.replace(/^0+/, '');
-                                    //         if(this.value === '') this.value = 0;
-                                    //     }
-                                    //     if(parseFloat(this.value) < 0 || this.value === '') {
-                                    //         this.value = 0;
-                                    //     }
-                                    // ",
-                                    //                                 ])
-                                    //                                 ->minValue(0)
-                                    //                                 ->prefix(fn($get) => $get('currency') === 'usd' ? '$' : '៛')
-                                    //                                 ->required()
-                                    //                                 ->lazy()
-                                    //                                 ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                    //                                     $currency = $get('currency') ?? 'usd';
-                                    //                                     $exchangeRate = 4100;
-
-                                    //                                     // Clean input
-                                    //                                     $state = ltrim((string) $state, '0');
-                                    //                                     if ($state === '' || !is_numeric($state)) {
-                                    //                                         $state = 0;
-                                    //                                     }
-                                    //                                     $state = (float) $state;
-
-                                    //                                     // Calculate required total in selected currency
-                                    //                                     $total = $this->getTotalAmount();
-                                    //                                     if ($currency === 'khr') {
-                                    //                                         $total *= $exchangeRate;
-                                    //                                     }
-
-                                    //                                     // Validate
-                                    //                                     if ($state < $total) {
-                                    //                                         Notification::make()
-                                    //                                             ->title('Insufficient Payment')
-                                    //                                             ->body('Payment must be at least equal to the total amount.')
-                                    //                                             ->warning()
-                                    //                                             ->send();
-
-                                    //                                         $state = $total;
-                                    //                                     }
-
-                                    //                                     // Keep user input as-is in form (don’t normalize here)
-                                    //                                     $set('total_pay', $state);
-                                    //                                 })
-                                    //                                 ->dehydrateStateUsing(function ($state, $get) {
-                                    //                                     // 👇 normalize to USD only when saving to DB
-                                    //                                     if ($get('currency') === 'khr') {
-                                    //                                         return $state / 4100;
-                                    //                                     }
-                                    //                                     return $state;
-                                    //                                 }),
-                                    // Placeholder::make('change')
-                                    //     ->label('Change')
-                                    //     ->content(function ($get) {
-                                    //         $currency = $get('currency') ?? 'usd';
-                                    //         $total = $this->getTotalAmount();
-                                    //         $pay = $get('total_pay') ?? 0;
-
-                                    //         if ($currency === 'khr') {
-                                    //             $exchangeRate = 4100;
-                                    //             $total = $total * $exchangeRate;
-                                    //             $symbol = '៛';
-                                    //         } else {
-                                    //             $symbol = '$';
-                                    //         }
-
-                                    //         $change = max(0, $pay - $total);
-
-                                    //         return $symbol . number_format($change, 2);
-                                    //     }),
-
-
 
                                 ])
 
