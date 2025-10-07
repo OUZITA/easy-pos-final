@@ -184,10 +184,10 @@
         </p> --}}
 
         <p class="total">Total Amount:.....................${{ number_format($subTotal - $sale->discount_amount, 2) }}
-            / (R) {{ number_format(($subTotal - $sale->discount_amount) * 4000, 0) }}
+            {{-- / (R) {{ number_format(($subTotal - $sale->discount_amount) * 4000, 0) }} --}}
         </p>
-        <p class="total">Paid Amount:.....................${{ number_format($sale->total_pay, 2) }} /
-            (R) {{ number_format($sale->total_pay * 4000, 0) }}
+        <p class="total">Paid Amount:.....................${{ number_format($sale->total_pay, 2) }}
+            {{-- (R) {{ number_format($sale->total_pay * 4000, 0) --}}
         </p>
         <p class="total">________________</p>
         <div class = "receipt-details">

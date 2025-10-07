@@ -210,15 +210,15 @@ class ProductResource extends Resource
                     ->badge()
                     ->color(
                         fn($record) =>
-                        $record->stock <= 0 ? 'danger' : ($record->stock <= $record->stock_security ? 'warning' : 'success')
+                        $record->stock <= 0 ? 'danger' : ($record->stock < $record->stock_security ? 'warning' : 'success')
                     )
                     ->icon(
                         fn($record) =>
-                        $record->stock <= 0 ? 'heroicon-m-x-circle' : ($record->stock <= $record->stock_security ? 'heroicon-m-exclamation-triangle' : 'heroicon-m-check-circle')
+                        $record->stock <= 0 ? 'heroicon-m-x-circle' : ($record->stock < $record->stock_security ? 'heroicon-m-exclamation-triangle' : 'heroicon-m-check-circle')
                     )
                     ->tooltip(
                         fn($record) =>
-                        $record->stock <= 0 ? 'Out of stock' : ($record->stock <= $record->stock_security ? 'Low stock - below security level' : 'Stock level is good')
+                        $record->stock <= 0 ? 'Out of stock (security level: ' . $record->stock_security . ')' : ($record->stock < $record->stock_security ? 'Low stock - Under safe Qty of ' . $record->stock_security : 'Stock level is good (above ' . $record->stock_security . ')')
                     ),
                 // Tables\Columns\TextColumn::make('stock_security')
                 //     ->label('Stock Security')
@@ -411,8 +411,8 @@ class ProductResource extends Resource
                                     TextEntry::make('productImport.supplier.name')->label('Supplier'),
                                     TextEntry::make('qty')->label('Quantity'),
                                     TextEntry::make('unit_price')->label('Unit Price')->money('usd'),
-                                    TextEntry::make('productImport.import_date')->label('Import Date')->date('d/m/Y'),
-                                    TextEntry::make('productImport.user.name')->label('Imported By'),
+                                    TextEntry::make('productImport.import_date')->label('Stock in Date')->date('d/m/Y'),
+                                    TextEntry::make('productImport.user.name')->label('Stock in By'),
                                 ]),
                             ])
                             ->columns(1)

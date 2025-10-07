@@ -19,6 +19,7 @@ use Filament\Forms\Form;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\Split;
+use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
@@ -75,6 +76,7 @@ class ProductImportResource extends Resource
         </div>'
                                     )
                                     ->allowHtml()
+                                    //->preload()
                                     ->required()
                                     ->distinct()
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems()
@@ -268,17 +270,17 @@ class ProductImportResource extends Resource
     {
         return $infolist
             ->schema([
-                \Filament\Infolists\Components\Section::make('Product Stock in Information')
+                \Filament\Infolists\Components\Section::make('Product Import Information')
                     ->schema([
                         Grid::make(3)
                             ->schema([
                                 TextEntry::make('id')
-                                    ->label('Stock in ID')
+                                    ->label('Import ID')
                                     ->badge()
                                     ->color('primary'),
 
                                 TextEntry::make('import_date')
-                                    ->label('Stock in Date')
+                                    ->label('Import Date')
                                     ->date('d/m/Y')
                                     ->icon('heroicon-o-calendar-days'),
 
@@ -294,6 +296,7 @@ class ProductImportResource extends Resource
                                     ->label('Supplier')
                                     ->icon('heroicon-o-building-office-2')
                                     ->weight(FontWeight::SemiBold),
+
 
                                 TextEntry::make('user.name')
                                     ->label('Created by')
@@ -312,53 +315,63 @@ class ProductImportResource extends Resource
                             ])
                     ])
 
+
                     ->columns(1),
+
 
                 \Filament\Infolists\Components\Section::make('Product Items')
                     ->schema([
                         RepeatableEntry::make('items')
                             ->schema([
-                                Split::make([
-                                    Grid::make(6)
-                                        ->schema([
-                                            TextEntry::make('product.name')
-                                                ->label('Product')
-                                                ->weight(FontWeight::SemiBold),
-                                            //->icon('heroicon-o-cube'),
+                                Grid::make(7)
+                                    ->schema([
+                                        ImageEntry::make('product.image')
+                                            // ->width(60)
+                                            ->size(100)
+                                            ->label('Image')
+                                            ->alignStart(),
+                                        TextEntry::make('product.name')
+                                            ->label('Product')
+                                            ->weight(FontWeight::SemiBold),
 
-                                            TextEntry::make('qty')
-                                                ->label('Quantity')
-                                                ->badge()
-                                                ->color('info'),
-                                            TextEntry::make('product.brand.name')
-                                                ->label('Brand')
-                                                ->badge()
-                                                ->color('success'),
-                                            TextEntry::make('product.category.name')
-                                                ->label('Category')
-                                                ->badge()
-                                                ->color('success'),
 
-                                            TextEntry::make('unit_price')
-                                                ->label('Unit Price')
-                                                ->money('USD')
-                                                ->icon('heroicon-o-currency-dollar'),
+                                        TextEntry::make('qty')
+                                            ->label('Quantity')
+                                            ->badge()
+                                            ->color('info'),
+                                        TextEntry::make('product.brand.name')
+                                            ->label('Brand')
+                                            ->badge()
+                                            ->color('success'),
+                                        TextEntry::make('product.category.name')
+                                            ->label('Category')
+                                            ->badge()
+                                            ->color('success'),
 
-                                            TextEntry::make('sub_total')
-                                                ->label('Sub Total')
-                                                ->money('USD')
-                                                ->weight(FontWeight::Bold)
-                                                ->color('success')
-                                                ->state(function ($record) {
-                                                    return $record->qty * $record->unit_price;
-                                                }),
-                                        ]),
-                                ])
+
+                                        TextEntry::make('unit_price')
+                                            ->label('Unit Price')
+                                            ->money('USD'),
+                                        // ->icon('heroicon-o-currency-dollar'),
+
+
+                                        TextEntry::make('sub_total')
+                                            ->label('Sub Total')
+                                            ->money('USD')
+                                            ->weight(FontWeight::Bold)
+                                            ->color('success')
+                                            ->state(function ($record) {
+                                                return $record->qty * $record->unit_price;
+                                            }),
+                                    ]),
+
+
                             ])
                             ->contained(false)
                             ->hiddenLabel(),
 
-                        Grid::make(5)
+
+                        Grid::make(6)
                             ->schema([
                                 // TextEntry::make('total_items')
                                 //     ->label('Total Items')
@@ -376,7 +389,8 @@ class ProductImportResource extends Resource
                                     ->label(''),
                                 TextEntry::make('z')
                                     ->label(''),
-
+                                TextEntry::make('zz')
+                                    ->label(''),
                                 TextEntry::make('total_amount')
                                     ->label('Total Amount')
                                     ->state(function ($record) {
@@ -393,6 +407,7 @@ class ProductImportResource extends Resource
                     ]),
             ]);
     }
+
 
     public static function table(Table $table): Table
     {
@@ -527,6 +542,7 @@ class ProductImportResource extends Resource
             ->searchable()
             ->actions([
                 Tables\Actions\ViewAction::make()
+                    ->modalWidth('6xl')
                     ->modalHeading('Stock In Information'), // 👈 disables "View Stock In"
                 //->label('Details'), // optional custom label,
                 // Tables\Actions\EditAction::make(),

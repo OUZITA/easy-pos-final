@@ -242,6 +242,50 @@ class ImportPageV2 extends Page implements Tables\Contracts\HasTable, Forms\Cont
                     ->label('Note')
                     ->nullable(),
 
+                // Confirmation checkbox for high-priced imports
+                Forms\Components\Checkbox::make('confirm_high_price')
+                    ->label('I confirm that I want to import products at prices higher than their current selling prices')
+                    ->visible(function () {
+                        $items = $this->formData['items'] ?? [];
+                        foreach ($items as $item) {
+                            if (isset($item['product_id']) && isset($item['unit_price'])) {
+                                $product = Product::find($item['product_id']);
+                                if ($product && $product->price > 0 && $item['unit_price'] > $product->price) {
+                                    return true;
+                                }
+                            }
+                        }
+                        return false;
+                    })
+                    ->required(function () {
+                        $items = $this->formData['items'] ?? [];
+                        foreach ($items as $item) {
+                            if (isset($item['product_id']) && isset($item['unit_price'])) {
+                                $product = Product::find($item['product_id']);
+                                if ($product && $product->price > 0 && $item['unit_price'] > $product->price) {
+                                    return true;
+                                }
+                            }
+                        }
+                        return false;
+                    })
+                    ->helperText(function () {
+                        $highPriceProducts = [];
+                        $items = $this->formData['items'] ?? [];
+                        foreach ($items as $item) {
+                            if (isset($item['product_id']) && isset($item['unit_price'])) {
+                                $product = Product::find($item['product_id']);
+                                if ($product && $product->price > 0 && $item['unit_price'] > $product->price) {
+                                    $highPriceProducts[] = $product->name . ' (Current: $' . number_format($product->price, 2) . ' → Import: $' . number_format($item['unit_price'], 2) . ')';
+                                }
+                            }
+                        }
+                        if (!empty($highPriceProducts)) {
+                            return 'High-priced products: ' . implode(', ', $highPriceProducts);
+                        }
+                        return '';
+                    }),
+
 
             ])
             ->statePath('formData')
@@ -302,6 +346,45 @@ class ImportPageV2 extends Page implements Tables\Contracts\HasTable, Forms\Cont
             return;
         }
 
+        // Check for products where unit price is over current selling price
+        $highPriceProducts = [];
+        foreach ($items as $item) {
+            if (isset($item['product_id']) && isset($item['unit_price'])) {
+                $product = Product::find($item['product_id']);
+                if ($product && $product->price > 0 && $item['unit_price'] > $product->price) {
+                    $highPriceProducts[] = [
+                        'name' => $product->name,
+                        'current_price' => $product->price,
+                        'import_price' => $item['unit_price'],
+                    ];
+                }
+            }
+        }
+
+        // If there are high-priced products, require confirmation
+        if (!empty($highPriceProducts)) {
+            // Check if user has confirmed
+            if (!isset($this->formData['confirm_high_price']) || $this->formData['confirm_high_price'] !== true) {
+                $this->addError('confirm_high_price', 'Please confirm that you want to import products at prices higher than their current selling prices.');
+
+                // Show notification with details
+                $message = "The following products have import prices higher than their current selling prices:\n\n";
+                foreach ($highPriceProducts as $product) {
+                    $message .= "- {$product['name']}: Current $" . number_format($product['current_price'], 2) . " → Import $" . number_format($product['import_price'], 2) . "\n";
+                }
+                $message .= "\nPlease check the confirmation box to proceed.";
+
+                Notification::make()
+                    ->title('High Price Import Warning')
+                    ->body($message)
+                    ->warning()
+                    ->persistent()
+                    ->send();
+
+                return; // Return without processing to show the form again
+            }
+        }
+
         try {
             DB::transaction(function () use ($items, $supplierId) {
                 // Create the main sale record with proper customer_id
@@ -340,6 +423,7 @@ class ImportPageV2 extends Page implements Tables\Contracts\HasTable, Forms\Cont
             // Clear cart and customer selection after successful checkout
             $this->formData['items'] = [];
             $this->formData['supplier_id'] = null;
+            $this->formData['confirm_high_price'] = false;
 
 
             Notification::make()

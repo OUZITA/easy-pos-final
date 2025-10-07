@@ -29,7 +29,6 @@ class LowStockProduct extends BaseWidget
             ->defaultSort('stock', 'asc')
             ->defaultPaginationPageOption(5)
 
-
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')

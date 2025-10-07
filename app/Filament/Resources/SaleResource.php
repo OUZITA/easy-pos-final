@@ -191,14 +191,26 @@ class SaleResource extends Resource
                     ->getStateUsing(fn(Sale $record) => $record->total_qty),
 
                 Tables\Columns\TextColumn::make('total_price')
-                    ->money(currency: 'usd')
-                    ->weight(FontWeight::Bold)
-                    ->sortable(query: fn(Builder $query, string $direction) => Sale::sortByTotalPrice($query, $direction))
+                    ->label('Total Price')
+                    ->sortable(
+                        query: fn(Builder $query, string $direction) =>
+                        $query->addSelect([
+                            'discounted_total' => SaleItem::selectRaw(
+                                'SUM(qty * unit_price * (1 - COALESCE(discount, 0) / 100))'
+                            )
+                                ->whereColumn('sales.id', 'sale_items.sale_id')
+                        ])
+                            ->orderBy('discounted_total', $direction)
+                    )
+
                     ->formatStateUsing(fn($record) => '$' . number_format(
                         $record->items->sum(fn($item) => ($item->qty * $item->unit_price) * (1 - ($item->discount ?? 0) / 100)),
                         2
                     ))
-                    ->color('success'),
+                    ->color('success')
+                    ->weight(FontWeight::Bold),
+
+
 
 
 
@@ -274,7 +286,7 @@ class SaleResource extends Resource
             ])
 
             ->actions([
-                Tables\Actions\ViewAction::make()
+                Tables\Actions\ViewAction::make()->modalWidth('6xl')
                 /* ->modalHeading('Sale Information') */,
                 // Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
@@ -318,161 +330,272 @@ class SaleResource extends Resource
     {
         return $infolist
             ->schema([
-                \Filament\Infolists\Components\Section::make('Sale Information')
+                // Main Sale Information Section
+                \Filament\Infolists\Components\Section::make('Sale Overview')
+                    ->description('Sale and customer information')
+                    ->icon('heroicon-o-shopping-cart')
+                    // ->collapsed(false)
                     ->schema([
-                        Grid::make(3)
+                        // Sale Details Row
+                        Grid::make(4)
                             ->schema([
                                 TextEntry::make('id')
                                     ->label('Sale ID')
                                     ->badge()
                                     ->formatStateUsing(fn($state) => Util::formatSaleId($state))
-                                    ->color('primary'),
+                                    ->color('primary')
+                                    ->icon('heroicon-o-hashtag')
+                                    ->size('lg'),
+
 
                                 TextEntry::make('sale_date')
                                     ->label('Sale Date')
-                                    ->date('d/m/Y')
-                                    ->icon('heroicon-o-calendar-days'),
+                                    ->date('M j, Y')
+                                    ->icon('heroicon-o-calendar-days')
+                                    ->badge()
+                                    ->color('gray'),
+
 
                                 TextEntry::make('created_at')
                                     ->label('Created')
                                     ->since()
-                                    ->icon('heroicon-o-clock'),
-                            ]),
+                                    ->icon('heroicon-o-clock')
+                                    ->badge()
+                                    ->color('gray'),
 
-                        Grid::make(3)
-                            ->schema([
-                                TextEntry::make('customer.name')
-                                    ->label('Customer')
-                                    ->icon('heroicon-o-user')
-                                    ->badge()
-                                    ->color('success')
-                                    ->weight(FontWeight::SemiBold),
-                                TextEntry::make('customer.phone')
-                                    ->label('Phone Number')
-                                    ->icon('heroicon-o-user')
-                                    ->badge()
-                                    ->color('success')
-                                    ->weight(FontWeight::SemiBold),
 
                                 TextEntry::make('user.name')
-                                    ->label('Created by')
+                                    ->label('Sold By')
                                     ->icon('heroicon-o-user-circle')
                                     ->badge()
-                                    ->color('success'),
+                                    ->color('info')
+                                    ->weight(FontWeight::Medium),
                             ]),
-                        Grid::make(1)
+
+
+                        // Customer Information Row
+                        Grid::make(4)
                             ->schema([
-                                TextEntry::make('note')
-                                    ->label('Notes')
-                                    ->html()
-                                    ->extraAttributes([
-                                        'class' => 'p-4 bg-gray-50 rounded-lg',
-                                    ])
+                                TextEntry::make('customer.name')
+                                    ->label('Customer Name')
+                                    ->icon('heroicon-o-user')
+                                    ->badge()
+                                    ->color('success')
+                                    ->weight(FontWeight::SemiBold)
+                                    ->size('lg'),
+
+
+                                TextEntry::make('customer.phone')
+                                    ->label('Phone Number')
+                                    ->icon('heroicon-o-phone')
+                                    ->badge()
+                                    ->color('success')
+                                    ->weight(FontWeight::Medium)
+                                    ->copyable()
+                                    ->copyMessage('Phone number copied!')
+                                    ->copyMessageDuration(1500),
+                            ]),
+
+
+                        // Notes Section
+                        TextEntry::make('note')
+                            ->label('Order Notes')
+                            ->html()
+                            ->columnSpanFull()
+                            ->placeholder('No additional notes')
+                            ->extraAttributes([
+                                'class' => 'p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700',
                             ])
-
+                            ->visible(fn($record) => !empty($record->note)),
                     ])
-                    ->columns(1),
+                    ->columns(1)
+                    ->collapsible()
+                    ->collapsed(false)
+                    ->persistCollapsed(),
 
-                \Filament\Infolists\Components\Section::make('Sale Items')
+
+                // Products Section
+                \Filament\Infolists\Components\Section::make('Products')
+                    ->description('Detailed of purchased products')
+                    ->collapsed(false)
+                    ->icon('heroicon-o-cube')
                     ->schema([
                         RepeatableEntry::make('items')
-                            ->schema([
-                                Split::make([
-                                    Grid::make(7)
-                                        ->schema([
-                                            TextEntry::make('product.name')
-                                                ->label('Product')
-                                                ->weight(FontWeight::SemiBold),
-                                            //->icon('heroicon-o-cube'),
-                                            TextEntry::make('qty')
-                                                ->label('Quantity')
-                                                ->badge()
-                                                ->color('primary'),
-                                            TextEntry::make('product.brand.name')
-                                                ->label('Brand')
-                                                ->badge()
-                                                ->color('success'),
-                                            TextEntry::make('product.category.name')
-                                                ->label('Category')
-                                                ->badge()
-                                                ->color('success'),
-                                            TextEntry::make('discount')
-                                                ->getStateUsing(fn($record) => $record->discount ?? 0)
-                                                ->suffix('%')
-                                                ->badge()
-                                                ->color('primary'),
-                                            TextEntry::make('unit_price')
-                                                ->label('Unit Price')
-                                                ->money('USD'),
-                                            //->icon('heroicon-o-currency-dollar'),
-
-                                            TextEntry::make('sub_total')
-                                                ->label('Sub Total')
-                                                ->money('USD')
-                                                ->weight(FontWeight::Bold)
-                                                // ->color('success')
-                                                ->state(function ($record) {
-                                                    return $record->subTotal();
-                                                }),
-                                        ]),
-                                ])
-                            ])
                             ->contained(false)
-                            ->hiddenLabel(),
-
-                        Grid::make(1)
-                            ->columnSpan(2) // optional if inside another grid
                             ->schema([
+                                // Product Header
+                                // Grid::make(1)
+                                //     ->schema([
+                                //         TextEntry::make('product.name')
+                                //             ->label('Product Name')
+                                //             ->weight(FontWeight::Bold)
+                                //             ->size('lg')
+                                //             ->icon('heroicon-o-cube')
+                                //             ->color('primary'),
+                                //     ]),
+
+
+                                // Product Details Grid
+                                Grid::make(8)
+                                    ->schema([
+                                        ImageEntry::make('product.image')
+                                            ->size('60px')
+                                            ->label('Image'),
+                                        TextEntry::make('product.name')
+                                            ->label('Name'),
+                                        TextEntry::make('qty')
+                                            ->label('Qty')
+                                            // ->badge()
+                                            // ->color('primary')
+                                            // ->size('lg')
+                                            ->weight(FontWeight::Bold),
+
+
+                                        TextEntry::make('product.brand.name')
+                                            ->label('Brand')
+                                            // ->badge()
+                                            // ->color('slate')
+                                            ->placeholder('No Brand'),
+
+
+                                        TextEntry::make('product.category.name')
+                                            ->label('Category')
+                                            // ->badge()
+                                            // ->weight(FontWeight::Bold)
+                                            // ->color('slate')
+                                            ->placeholder('Uncategorized'),
+
+
+                                        TextEntry::make('unit_price')
+                                            ->label('Unit Price')
+                                            ->money('USD'),
+                                        // ->icon('heroicon-o-currency-dollar')
+                                        // ->weight(FontWeight::Medium),
+
+
+                                        TextEntry::make('discount')
+                                            ->label('Discount')
+                                            ->getStateUsing(fn($record) => $record->discount ?? 0)
+                                            ->suffix('%')
+                                            ->badge()
+                                            ->color(fn($state) => $state > 0 ? 'warning' : 'gray'),
+                                        // ->visible(fn($record) => ($record->discount ?? 0) > 0),
+
+
+                                        TextEntry::make('sub_total')
+                                            ->label('Sub Total')
+                                            ->money('USD')
+                                            ->weight(FontWeight::Bold)
+                                            ->color('success')
+                                            // ->size('lg')
+                                            ->state(function ($record) {
+                                                return $record->subTotal();
+                                            }),
+                                    ]),
+                            ])
+                            ->contained(true)
+                            ->hiddenLabel()
+                            ->extraAttributes([
+                                'class' => 'border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 bg-white dark:bg-gray-900',
+                            ]),
+                    ])
+                    ->collapsible()
+                    ->collapsed(false)
+                    ->persistCollapsed(),
+
+
+                // Payment Summary Section
+                \Filament\Infolists\Components\Section::make('Payment Summary')
+                    ->description('Total amounts and payment details')
+                    ->icon('heroicon-o-credit-card')
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                // Total Amount Card
                                 TextEntry::make('total_amount')
                                     ->label('Total Amount')
                                     ->state(function ($record) {
                                         $usdAmount = $record->total_price;
-                                        $rielAmount = round($usdAmount * 4000, -2); // Convert to Riel and round to nearest 100
-                                        return '$' . number_format($usdAmount, 2) . ' / KHR ' . number_format($rielAmount, 0);
+                                        $rielAmount = number_format(round($usdAmount * 4000, -2));
+                                        return '$' . number_format($usdAmount, 2);
                                     })
-                                    ->size('lg')
-                                    //->weight(FontWeight::Bold)
+                                    ->size('xl')
+                                    ->weight(FontWeight::Bold)
                                     ->color('success')
-
                                     ->extraAttributes([
-                                        'class' => 'text-right', // aligns text to the right
+                                        'class' => 'text-center p-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl border-2 border-blue-200 dark:border-blue-800',
                                     ]),
 
+
+                                // Paid Amount Card
                                 TextEntry::make('payment')
-                                    ->label('Paid Amount')
+                                    ->label('Amount Paid')
                                     ->state(function ($record) {
                                         $usdAmount = $record->total_pay;
-                                        $rielAmount = round($usdAmount * 4000, -2); // Convert to Riel and round to nearest 100
-                                        return '$' . number_format($usdAmount, 2) . ' / KHR ' . number_format($rielAmount, 0);
+                                        if ($record->total_pay <= 0) {
+                                            return '$' . number_format($record->total_price, 2);
+                                        }
+                                        // $rielAmount = number_format(round($usdAmount * 4000, -2));
+                                        // $status = $usdAmount >= $record->total_price ? 'PAID' : 'PARTIAL';
+                                        return '$' . number_format($usdAmount, 2);
+                                    })
+                                    ->size('xl')
+                                    ->weight(FontWeight::Bold)
+                                    ->color('success')
+                                    ->extraAttributes([
+                                        'class' => 'text-center p-6 bg-green-50 dark:bg-green-900/20 rounded-xl border-2 border-green-200 dark:border-green-800',
+                                    ]),
+                            ]),
+
+
+                        // Change/Balance Due
+                        Grid::make(1)
+                            ->schema([
+                                TextEntry::make('balance')
+                                    ->label('')
+                                    ->state(function ($record) {
+                                        $total_pay = $record->total_pay ?? $record->total_price;
+                                        $balance =  $total_pay - $record->total_price;
+                                        if ($balance > 0) {
+                                            return 'Change Due: $' . number_format($balance, 2);
+                                        } else {
+                                            return 'Fully Paid ✓';
+                                        }
                                     })
                                     ->size('lg')
-                                    //->weight(FontWeight::Bold)
-                                    ->color('info')
-
+                                    ->weight(FontWeight::Bold)
+                                    ->color('success')
                                     ->extraAttributes([
-                                        'class' => 'text-right', // aligns text to the right
+                                        'class' => 'text-center p-4 rounded-lg',
                                     ]),
-                            ])
-                            ->extraAttributes([
-                                'class' => 'flex justify-end', // pushes entire column to the right
-                            ])
-
+                            ]),
                     ])
-                    ->collapsible(),
-                Grid::make()
+                    ->columns(1),
+
+
+                // Actions Section
+                \Filament\Infolists\Components\Section::make('')
                     ->schema([
                         TextEntry::make('print_button')
                             ->label('')
                             ->html()
                             ->state(function ($record) {
-                                return '<div style="text-align: right;">
-                                    <a href="' . route('receipt.print', ['sale' => $record->id]) . '" target="_blank"
-                                        style="background-color:rgb(43, 179, 64); color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; display: inline-block;">
-                                        🖨️ Print Receipt
-                                    </a>
-                                </div>';
+                                return '
+                                    <div class="flex justify-end">
+                                        <a href="' . route('receipt.print', ['sale' => $record->id]) . '"
+                                           target="_blank"
+                                           style="background-color:  #00B140"
+                                           class="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg shadow transition-colors duration-150">
+                                            🖨️ Print Invoice
+                                        </a>
+                                    </div>
+                                ';
                             })
                             ->columnSpanFull(),
+                    ])
+                    ->headerActions([])
+                    ->extraAttributes([
+                        'class' => 'border-0 shadow-none bg-transparent',
                     ]),
             ]);
     }
