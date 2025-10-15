@@ -31,6 +31,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use App\Enums\Role;
 
 class ProductImportResource extends Resource
 {
@@ -70,7 +72,7 @@ class ProductImportResource extends Resource
             <img src="' . ($record->image
                                             ? \Illuminate\Support\Facades\Storage::url($record->image)
                                             : \App\Helpers\Util::getDefaultAvatar($record->name)
-                                        ) . '" 
+                                        ) . '"
             style="width: 30px; height: 30px; margin-right: 10px; border-radius: 4px;" />
             <span>' . e($record->name) . ' | $' . number_format($record->price ?? 0, 2) . ' | Stock: ' . ($record->stock ?? 0) . '</span>
         </div>'
@@ -81,12 +83,7 @@ class ProductImportResource extends Resource
                                     ->distinct()
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                                     ->searchable()
-                                    ->columnSpanFull()
-
-                                    ->afterStateUpdated(
-                                        fn($state, callable $set) =>
-                                        $set('unit_price', \App\Models\Product::find($state)?->price ?? 0)
-                                    ),
+                                    ->columnSpanFull(),
 
 
                                 Forms\Components\TextInput::make('qty')
@@ -127,6 +124,7 @@ class ProductImportResource extends Resource
                                     ->minValue(0)
                                     ->prefix('$')
                                     ->required()
+                                    ->default(0)
                                     ->lazy()
                                     ->extraAttributes([
                                         'onkeydown' => "
@@ -155,7 +153,7 @@ class ProductImportResource extends Resource
                                         if ($state === '' || !is_numeric($state)) {
                                             $state = 0;
                                         }
-                                        $state = (float) $state;
+                                        $state = floor((float) $state * 100) / 100;
 
                                         if ($state < 0) {
                                             $set('unit_price', 0);
@@ -303,6 +301,7 @@ class ProductImportResource extends Resource
                                     ->icon('heroicon-o-user-circle')
                                     ->badge()
                                     ->color('success'),
+
                             ]),
                         Grid::make(1)
                             ->schema([
@@ -315,9 +314,7 @@ class ProductImportResource extends Resource
                             ])
                     ])
 
-
                     ->columns(1),
-
 
                 \Filament\Infolists\Components\Section::make('Product Items')
                     ->schema([
@@ -406,6 +403,12 @@ class ProductImportResource extends Resource
                             ])
                     ]),
             ]);
+        /* ->actions([
+                Action::make('edit')
+                    ->label('Edit Import Details')
+                    ->url(fn($record) => static::getUrl('edit', ['record' => $record]))
+                    ->icon('heroicon-o-pencil'),
+            ]); */
     }
 
 
@@ -415,6 +418,7 @@ class ProductImportResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')
+                    ->searchable()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('products')
                     ->label('Products')
@@ -545,8 +549,10 @@ class ProductImportResource extends Resource
                     ->modalWidth('6xl')
                     ->modalHeading('Stock In Information'), // 👈 disables "View Stock In"
                 //->label('Details'), // optional custom label,
-                // Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->hidden(fn() => Auth::user()?->role === Role::Cashier),
                 Tables\Actions\DeleteAction::make()
+                    ->hidden(fn() => Auth::user()?->role === Role::Cashier)
                     ->before(function (ProductImport $record) {
                         foreach ($record->items as $item) {
                             $product = $item->product;
@@ -579,7 +585,7 @@ class ProductImportResource extends Resource
         return [
             'index' => Pages\ListProductImports::route('/'),
             'create' => Pages\CreateProductImport::route('/create'),
-            // 'edit' => Pages\EditProductImport::route('/{record}/edit'),
+            'edit' => Pages\EditProductImport::route('/{record}/edit'),
         ];
     }
 }

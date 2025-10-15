@@ -210,10 +210,6 @@ class SaleResource extends Resource
                     ->color('success')
                     ->weight(FontWeight::Bold),
 
-
-
-
-
                 Tables\Columns\TextColumn::make('sale_date')
                     ->label('Sale Date')
                     ->sortable()
@@ -288,7 +284,7 @@ class SaleResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make()->modalWidth('6xl')
                 /* ->modalHeading('Sale Information') */,
-                // Tables\Actions\EditAction::make(),
+                //Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
                     ->before(function (Sale $record) {
                         Log::info($record);
@@ -615,7 +611,7 @@ class SaleResource extends Resource
             'create' => Pages\CreateSale::route('/create'),
             'invoice' => Pages\SaleInvoice::route('/{record}/invoice'),
             // 'view' => Pages\ViewSale::route('/{record}'),
-            // 'edit' => Pages\EditSale::route('/{record}/edit'),
+            'edit' => Pages\EditSale::route('/{record}/edit'),
         ];
     }
 }

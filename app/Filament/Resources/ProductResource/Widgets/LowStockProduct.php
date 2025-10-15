@@ -75,6 +75,7 @@ class LowStockProduct extends BaseWidget
                     ->toggleable(true)
                     ->limit(120)
                     ->wrap()
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->html(),
                 Tables\Columns\TextColumn::make('user.name')
                     ->toggleable(isToggledHiddenByDefault: true)

@@ -132,7 +132,24 @@ class CreateProductImport extends CreateRecord
                                 ])
                                 ->prefix('$')
                                 ->placeholder('0.00')
-                                ->minValue(0.01),
+                                ->minValue(0.01)
+                                ->afterStateUpdated(function ($state, callable $set) {
+                                    $state = ltrim((string) $state, '0');
+                                    if ($state === '' || !is_numeric($state)) {
+                                        $state = 0;
+                                    }
+                                    $state = floor((float) $state * 100) / 100;
+
+                                    if ($state < 0.01) {
+                                        $set('price', 0.01);
+                                        \Filament\Notifications\Notification::make()
+                                            ->title('Price must be at least 0.01')
+                                            ->danger()
+                                            ->send();
+                                    } else {
+                                        $set('price', $state);
+                                    }
+                                }),
                             Forms\Components\Select::make('category_id')
                                 ->label('Category')
                                 ->options(Category::where('active', true)->pluck('name', 'id'))

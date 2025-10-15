@@ -37,14 +37,14 @@ class Dashboard extends BaseDashboard
                     ->label('')
 
                     ->content(new HtmlString(
-                        '<a href="' . ImportPage::getUrl() . '" 
+                        '<a href="' . ImportPageV2::getUrl() . '" 
                         class="mt-6 w-full h-10 flex items-center justify-center rounded-lg bg-primary-600 text-white text-sm font-medium shadow hover:bg-primary-700 transition">
-                        Click to Import Stock
+                        Click to Import Stock V2
                     </a>'
                     )), */])
             ->columns(2);
     }
-    /*  protected function getHeaderActions(): array
+    /* protected function getHeaderActions(): array
     {
         return [
             Action::make('New Sale')
@@ -59,8 +59,8 @@ class Dashboard extends BaseDashboard
                 ->color('primary')
                 ->size('xl'),
         ];
-    }
- */
+    } */
+
     public function getWidgets(): array
     {
         return [

@@ -67,11 +67,10 @@ class ImportPageV3 extends Page implements Tables\Contracts\HasTable, Forms\Cont
                 Section::make('Product Items')
                     ->schema([
                         Repeater::make('items')
-                            ->relationship()
                             ->schema([
                                 Forms\Components\Select::make('product_id')
                                     ->label('Product')
-                                    ->relationship('product', 'name', fn($query) => $query->where('active', true)->orderBy('stock'))
+                                    ->options(Product::where('active', true)->orderBy('stock')->pluck('name', 'id'))
                                     ->preload()
                                     ->required()
                                     ->distinct()
@@ -104,7 +103,7 @@ class ImportPageV3 extends Page implements Tables\Contracts\HasTable, Forms\Cont
                     ->schema([
                         Forms\Components\Select::make('supplier_id')
                             ->label('Supplier')
-                            ->relationship('supplier', 'name', modifyQueryUsing: fn(Builder $query) => $query->where('active', true))
+                            ->options(Supplier::where('active', true)->pluck('name', 'id'))
                             ->preload()
                             ->searchable()
                             ->required(),
@@ -446,7 +445,24 @@ class ImportPageV3 extends Page implements Tables\Contracts\HasTable, Forms\Cont
                                             ])
                                             ->prefix('$')
                                             ->placeholder('0.00')
-                                            ->minValue(0.01),
+                                            ->minValue(0.01)
+                                            ->afterStateUpdated(function ($state, callable $set) {
+                                                $state = ltrim((string) $state, '0');
+                                                if ($state === '' || !is_numeric($state)) {
+                                                    $state = 0;
+                                                }
+                                                $state = floor((float) $state * 100) / 100;
+
+                                                if ($state < 0.01) {
+                                                    $set('price', 0.01);
+                                                    \Filament\Notifications\Notification::make()
+                                                        ->title('Price must be at least 0.01')
+                                                        ->danger()
+                                                        ->send();
+                                                } else {
+                                                    $set('price', $state);
+                                                }
+                                            }),
 
                                         Forms\Components\Select::make('category_id')
                                             ->label('Category')

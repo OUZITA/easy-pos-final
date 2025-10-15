@@ -142,6 +142,7 @@
                     style="text-align: left; width: 50%; border: none; padding: 0;margin-left: 90px;  vertical-align: top;">
                     <p>Invoice No: 00{{ $sale->id }}</p>
                     <p>Invoice Date: {{ \Carbon\Carbon::parse($sale->sale_date)->format('F d, Y') }}</p>
+                    <p>Store Phone Number: 015 589 808</p>
 
                 </td>
             </tr>

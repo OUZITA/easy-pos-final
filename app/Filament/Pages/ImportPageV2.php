@@ -64,9 +64,9 @@ class ImportPageV2 extends Page implements Tables\Contracts\HasTable, Forms\Cont
                 TableRepeater::make('items')
                     ->headers([
                         Header::make('name')->label('Product Name')->width('30%'),
-                        Header::make('qty')->label('Quantity')->width('150px')->align(Alignment::Left),
+                        Header::make('qty')->label('Quantity')->width('100px')->align(Alignment::Left),
                         Header::make('stock')->label('Currently In Stock')->width('120px')->align(Alignment::Center),
-                        Header::make('unit_price')->label('Price Per Unit')->width('120px')->align(Alignment::Center),
+                        Header::make('unit_price')->label('Price Per Unit')->width('150px')->align(Alignment::Center),
                         Header::make('product_price')->label('Current Selling Price')->width('140px')->align(Alignment::Center),
                         Header::make('Total_price')->label('Sub Total')->width('120px')->align(Alignment::Center),
                         Header::make('actions')->label('')->width('80px'),
@@ -167,7 +167,7 @@ class ImportPageV2 extends Page implements Tables\Contracts\HasTable, Forms\Cont
                                 if ($state === '' || !is_numeric($state)) {
                                     $state = 0;
                                 }
-                                $state = (float) $state;
+                                $state = floor((float) $state * 100) / 100;
 
                                 if ($state < 0) {
                                     $set('unit_price', 0);
@@ -550,7 +550,7 @@ class ImportPageV2 extends Page implements Tables\Contracts\HasTable, Forms\Cont
                                 if ($state === '' || !is_numeric($state)) {
                                     $state = 0;
                                 }
-                                $state = (float) $state;
+                                $state = floor((float) $state * 100) / 100;
 
                                 if ($state < 0) {
                                     $set('unit_price', 0);
@@ -660,7 +660,24 @@ class ImportPageV2 extends Page implements Tables\Contracts\HasTable, Forms\Cont
                                             ])
                                             ->prefix('$')
                                             ->placeholder('0.00')
-                                            ->minValue(0.01),
+                                            ->minValue(0.01)
+                                            ->afterStateUpdated(function ($state, callable $set) {
+                                                $state = ltrim((string) $state, '0');
+                                                if ($state === '' || !is_numeric($state)) {
+                                                    $state = 0;
+                                                }
+                                                $state = floor((float) $state * 100) / 100;
+
+                                                if ($state < 0.01) {
+                                                    $set('price', 0.01);
+                                                    \Filament\Notifications\Notification::make()
+                                                        ->title('Price must be at least 0.01')
+                                                        ->danger()
+                                                        ->send();
+                                                } else {
+                                                    $set('price', $state);
+                                                }
+                                            }),
 
                                         Forms\Components\Select::make('category_id')
                                             ->label('Category')

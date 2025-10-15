@@ -244,6 +244,15 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                                 ->maxLength(255),
                                             Forms\Components\TextInput::make('phone')
                                                 ->maxLength(255),
+                                            Forms\Components\Select::make('gender')
+                                                ->prefixIcon('heroicon-m-user-circle')
+                                                ->options([
+                                                    'male' => 'Male',
+                                                    'female' => 'Female',
+                                                ]),
+                                            Forms\Components\TextInput::make('address')
+                                                ->label('Address (optional)')
+                                                ->maxLength(255),
                                         ])
                                         ->createOptionUsing(function (array $data) {
                                             return \App\Models\Customer::create($data)->id;
@@ -287,7 +296,7 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                             if ($state === '' || !is_numeric($state)) {
                                                 $state = 0;
                                             }
-                                            $state = (float) $state;
+                                            $state = round((float) $state, 2);
 
                                             // Calculate required total
                                             $total = $this->getTotalAmount();

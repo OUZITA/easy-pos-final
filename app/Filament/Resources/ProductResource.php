@@ -97,7 +97,24 @@ class ProductResource extends Resource
                                     ])
                                     ->prefix('$')
                                     ->placeholder('0.00')
-                                    ->minValue(0.01),
+                                    ->minValue(0.01)
+                                    ->afterStateUpdated(function ($state, callable $set) {
+                                        $state = ltrim((string) $state, '0');
+                                        if ($state === '' || !is_numeric($state)) {
+                                            $state = 0;
+                                        }
+                                        $state = floor((float) $state * 100) / 100;
+
+                                        if ($state < 0.01) {
+                                            $set('price', 0.01);
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('Price must be at least 0.01')
+                                                ->danger()
+                                                ->send();
+                                        } else {
+                                            $set('price', $state);
+                                        }
+                                    }),
 
                                 Forms\Components\Select::make('category_id')
                                     ->label('Category')
@@ -218,7 +235,7 @@ class ProductResource extends Resource
                     )
                     ->tooltip(
                         fn($record) =>
-                        $record->stock <= 0 ? 'Out of stock (security level: ' . $record->stock_security . ')' : ($record->stock < $record->stock_security ? 'Low stock - Under safe Qty of ' . $record->stock_security : 'Stock level is good (above ' . $record->stock_security . ')')
+                        $record->stock < 0 ? 'Stock negative due to missing or unrecorded transactions.' : ($record->stock <= 0 ? 'Out of stock (security level: ' . $record->stock_security . ')' : ($record->stock < $record->stock_security ? 'Low stock - Under safe Qty of ' . $record->stock_security : 'Stock level is good (above ' . $record->stock_security . ')'))
                     ),
                 // Tables\Columns\TextColumn::make('stock_security')
                 //     ->label('Stock Security')
@@ -275,7 +292,8 @@ class ProductResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->hidden(fn() => Auth::user()?->role === Role::Cashier),
             ])
 
             ->bulkActions([
