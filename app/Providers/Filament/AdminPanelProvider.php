@@ -15,7 +15,6 @@ use App\Filament\Pages\Auth\VerifyOtp;
 use App\Filament\Pages\Auth\ResetPassword;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\ImportPageV2;
-use App\Filament\Pages\ImportPageV3;
 use App\Http\Middleware\EnsureUserIsActive;
 use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
@@ -66,8 +65,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Dashboard::class,
-                ImportPageV2::class,
-                ImportPageV3::class,
+                // ImportPageV2::class,
                 VerifyOtp::class,
                 ResetPassword::class,
             ])

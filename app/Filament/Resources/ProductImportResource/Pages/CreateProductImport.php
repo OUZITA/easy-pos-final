@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ProductImportResource\Pages;
 
+use App\Enums\Role;
 use App\Filament\Resources\ProductImportResource;
 use App\Models\Product;
 use App\Models\Category;
@@ -11,6 +12,7 @@ use Filament\Actions\CreateAction;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class CreateProductImport extends CreateRecord
@@ -103,6 +105,7 @@ class CreateProductImport extends CreateRecord
                 ->label('Add New Product')
                 ->icon('heroicon-o-plus')
                 ->modalHeading('Add New Product')
+                ->visible(fn() => Auth::user()?->role !== Role::Cashier)
                 ->form([
                     Forms\Components\Grid::make(2)
                         ->schema([

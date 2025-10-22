@@ -301,6 +301,10 @@ class ProductImportResource extends Resource
                                     ->icon('heroicon-o-user-circle')
                                     ->badge()
                                     ->color('success'),
+                                TextEntry::make('updated_at')
+                                    ->label('Updated')
+                                    ->since()
+                                    ->icon('heroicon-o-clock'),
 
                             ]),
                         Grid::make(1)

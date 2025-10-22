@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\BrandResource\RelationManagers;
+namespace App\Filament\Resources\CategoryResource\RelationManagers;
 
 use App\Enums\Role;
 use App\Helpers\Util;
@@ -35,7 +35,7 @@ class ProductsRelationManager extends RelationManager
                                     ->required()
                                     ->maxLength(255)
                                     ->placeholder('Enter product name')
-                                    ->unique(Product::class, 'name', ignoreRecord: true)
+                                    ->unique(ignoreRecord: true)
                                     ->live(),
                                 Forms\Components\TextInput::make('price')
                                     ->label('Price')
@@ -169,8 +169,8 @@ class ProductsRelationManager extends RelationManager
                     ->sortable()
                     ->weight('medium'),
 
-                Tables\Columns\TextColumn::make('category.name')
-                    ->label('Category')
+                Tables\Columns\TextColumn::make('brand.name')
+                    ->label('Brand')
                     ->badge()
                     ->color('info'),
 
@@ -203,8 +203,8 @@ class ProductsRelationManager extends RelationManager
                     ->falseColor('danger'),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('category')
-                    ->relationship('category', 'name')
+                Tables\Filters\SelectFilter::make('brand')
+                    ->relationship('brand', 'name')
                     ->preload()
                     ->multiple(),
 
@@ -216,7 +216,7 @@ class ProductsRelationManager extends RelationManager
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
-                    ->label('Add New Product')
+                    ->label(' Add New Product')
                     ->icon('heroicon-m-plus')
                     ->modalWidth('6xl')
                     ->visible(fn() => Auth::user()?->role !== Role::Cashier),

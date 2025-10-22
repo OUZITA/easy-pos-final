@@ -4,8 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Exports\ProductExporter;
 use App\Filament\Resources\ProductResource\Pages;
-use App\Filament\Resources\ProductResource\RelationManagers;
-use App\Filament\Resources\ProductResource\Widgets\ProductStats;
 use App\Helpers\Util;
 use App\Models\Brand;
 use App\Models\Category;
@@ -39,6 +37,7 @@ use SebastianBergmann\CodeCoverage\Report\Html\Colors;
 use Filament\Infolists\Components\RepeatableEntry;
 use Illuminate\Support\Facades\Auth;
 use App\Enums\Role;
+use App\Filament\Resources\ProductResource\RelationManagers\ProductImportItemsRelationManager;
 
 use function Laravel\Prompts\table;
 
@@ -157,9 +156,9 @@ class ProductResource extends Resource
             if(event.key === '0' && event.target.value.length === 0) event.preventDefault();
         ",
                                         'oninput' => "
-            this.value = this.value.replace(/^0+/, ''); 
+            this.value = this.value.replace(/^0+/, '');
             if(this.value === '' || parseInt(this.value) < 1) this.value = 1;
-            this.value = this.value.replace(/[^0-9]/g, ''); 
+            this.value = this.value.replace(/[^0-9]/g, '');
         ",
                                     ])
                                     ->minValue(1)
@@ -211,7 +210,7 @@ class ProductResource extends Resource
                     ->label('ID')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\ImageColumn::make('image')
-                    ->size(60)
+                    // ->size(60)
                     ->defaultImageUrl(fn($record) => Util::getDefaultAvatar($record->name)),
                 Tables\Columns\TextColumn::make('name')
                     ->sortable()
@@ -219,9 +218,11 @@ class ProductResource extends Resource
                 Tables\Columns\TextColumn::make('price')
                     ->label('Sale Price')
                     ->weight(FontWeight::Bold)
+                    ->color('success')
                     ->money()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('stock')
+                    ->label('In Stock')
                     ->sortable()
                     ->weight(FontWeight::Bold)
                     ->badge()
@@ -237,10 +238,6 @@ class ProductResource extends Resource
                         fn($record) =>
                         $record->stock < 0 ? 'Stock negative due to missing or unrecorded transactions.' : ($record->stock <= 0 ? 'Out of stock (security level: ' . $record->stock_security . ')' : ($record->stock < $record->stock_security ? 'Low stock - Under safe Qty of ' . $record->stock_security : 'Stock level is good (above ' . $record->stock_security . ')'))
                     ),
-                // Tables\Columns\TextColumn::make('stock_security')
-                //     ->label('Stock Security')
-                //     ->badge()
-                //     ->color(color: 'primary'),
 
                 Tables\Columns\TextColumn::make('brand.name')
                     ->label('Brand')
@@ -291,7 +288,9 @@ class ProductResource extends Resource
                     ->falseLabel('Inactive Products')
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->modalHeading('')
+                    ->modalWidth('5xl'),
                 Tables\Actions\EditAction::make()
                     ->hidden(fn() => Auth::user()?->role === Role::Cashier),
             ])
@@ -303,18 +302,6 @@ class ProductResource extends Resource
                     ->exporter(ProductExporter::class)
             ])
             ->recordUrl(null)
-            // ->bulkActions([
-            //     Tables\Actions\BulkAction::make('activate')
-            //         ->label('Activate Selected')
-            //         ->icon('heroicon-m-check-circle')
-            //         ->color('success')
-            //         ->action(fn(Collection $records) => $records->each->update(['active' => true])),
-            //     Tables\Actions\BulkAction::make('deactivate')
-            //         ->label('Deactivate Selected')
-            //         ->icon('heroicon-m-x-circle')
-            //         ->color('danger')
-            //         ->action(fn(Collection $records) => $records->each->update(['active' => false])),
-            // ])
             ->defaultSort(function (Builder $query) {
                 return $query
                     ->orderByDesc('created_at');
@@ -332,7 +319,7 @@ class ProductResource extends Resource
     {
         return $infolist
             ->schema([
-                InfoSection::make('Product Details')
+                InfoSection::make('Product Information')
                     ->icon('heroicon-m-cube')
                     ->schema([
                         Split::make([
@@ -360,7 +347,7 @@ class ProductResource extends Resource
                                         ->schema([
                                             TextEntry::make('price')
                                                 ->label('Price')
-
+                                                ->weight(FontWeight::Bold)
                                                 ->money('USD')
                                                 ->size(TextEntry\TextEntrySize::Large)
                                                 ->color('success'),
@@ -389,7 +376,7 @@ class ProductResource extends Resource
                 InfoSection::make('Additional Information')
                     ->icon('heroicon-m-information-circle')
                     ->schema([
-                        InfoGrid::make(5)
+                        InfoGrid::make(4)
                             ->schema([
                                 TextEntry::make('id')
                                     ->label('ID')
@@ -404,58 +391,31 @@ class ProductResource extends Resource
                                     ->label('Brand')
                                     ->badge()
                                     ->color('primary'),
-
-                                TextEntry::make('created_at')
-                                    ->label('Created')
-                                    ->dateTime('d/m/Y h:m:s')
-                                    ->tooltip(fn($state) => $state->diffForHumans()),
-
                                 TextEntry::make('user.name')
                                     ->label('Created By')
                                     ->badge(),
                             ]),
                     ])
-                    ->collapsible(),
-                InfoSection::make('Import History')
-                    ->icon('heroicon-m-arrow-down-tray')
-                    ->collapsible()
-                    ->schema([
-                        // Mini table / preview of recent imports (last 5)
-                        RepeatableEntry::make('productimportItems')
-                            ->label('')
-                            ->schema([
-                                InfoGrid::make(6)->schema([
-                                    TextEntry::make('productImport.id')->label('Import ID'),
-                                    TextEntry::make('productImport.supplier.name')->label('Supplier'),
-                                    TextEntry::make('qty')->label('Quantity'),
-                                    TextEntry::make('unit_price')->label('Unit Price')->money('usd'),
-                                    TextEntry::make('productImport.import_date')->label('Stock in Date')->date('d/m/Y'),
-                                    TextEntry::make('productImport.user.name')->label('Stock in By'),
-                                ]),
-                            ])
-                            ->columns(1)
-                            ->default(fn($record) => $record->productimportItems->take(5)),
-
-                    ]),
-                /* InfoSection::make('')
-                    ->schema([ // Button linking to full DetailPage
-                        InfoGrid::make(1)->schema([
-                            TextEntry::make('view_full_import_history')
-                                ->default(fn($record) => $record->productimportItems?->take(5) ?? collect())
-                                ->label('')
-                                ->html()
-                                ->state(fn($record) => '
-            <div style="text-align: right;">
-                <a href="' . \App\Filament\Pages\DetailPage::getUrl() . '?product_id=' . $record->id . '" target="_blank"
-                    style="background-color: rgb(59, 130, 246); color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; display: inline-block;">
-                    📄 View Full Import History
-                </a>
-            </div>
-        ')
-                                ->columnSpanFull(),
-                        ]),
-                    ]), */
-
+                // ->collapsible(),
+                // InfoSection::make('Stock In History')
+                //     ->icon('heroicon-m-arrow-down-tray')
+                //     // ->collapsible()
+                //     ->schema([
+                //         // Mini table / preview of recent imports (last 5)
+                //         RepeatableEntry::make('productimportItems')
+                //             ->label('')
+                //             ->schema([
+                //                 InfoGrid::make(5)->schema([
+                //                     // TextEntry::make('productImport.id')->label('ID'),
+                //                     TextEntry::make('productImport.supplier.name')->label('Supplier'),
+                //                     TextEntry::make('qty')->label('Quantity'),
+                //                     TextEntry::make('unit_price')->label('Unit Price')->money('usd'),
+                //                     TextEntry::make('productImport.import_date')->label('Stock in Date')->date('d/m/Y'),
+                //                     TextEntry::make('productImport.user.name')->label('Stock in By'),
+                //                 ]),
+                //             ])
+                //             ->columns(1)
+                //             ->default(fn($record) => $record->productimportItems->take(5)),
             ]);
     }
 
@@ -463,7 +423,7 @@ class ProductResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ProductImportItemsRelationManager::class,
         ];
     }
 
@@ -471,13 +431,18 @@ class ProductResource extends Resource
     {
         return [
             'index' => Pages\ListProducts::route('/'),
-            'display' => Pages\DisplayProduct::route('{record}/display'),
+            // 'display' => Pages\DisplayProduct::route('{record}/display'),
             'list' => Pages\CustomListProducts::route('/list'),
             'create' => Pages\CreateProduct::route('/create'),
             'edit' => Pages\EditProduct::route('/{record}/edit'),
         ];
     }
     public static function canCreate(): bool
+    {
+        return Auth::user()?->role !== Role::Cashier;
+    }
+
+    public static function canEdit($record): bool
     {
         return Auth::user()?->role !== Role::Cashier;
     }

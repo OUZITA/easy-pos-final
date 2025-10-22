@@ -126,7 +126,9 @@
             <h1 text-align: center;>Invoice</h1>
         </div>
         <div style="display: flex; align-items: center; justify-content: space-between;">
-            <img src="{{ public_path('storage\default\bg.png') }}" alt="Logo" width="70" align="right">
+            <img src="D:\SchoolY4\mini-pos-final\tlgold-pos\storage\app\public\default\bg.png" alt="Logo"
+                width="70" align="right">
+            {{-- <img src="{{ public_path('storage\default\bg.png') }}" alt="Logo" width="70" align="right"> --}}
             <h2 style="margin: 0;">TL Gold Computer</h2>
         </div>
 

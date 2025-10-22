@@ -57,6 +57,13 @@ class EditProfile extends BaseEditProfile
                     ->autocomplete('name')
                     ->prefixIcon('heroicon-m-user')
                     ->columnSpanFull(),
+                TextInput::make('phone_number')
+                    ->label('Phone Number')
+                    ->required()
+                    ->maxLength(255)
+                    ->autocomplete('phone')
+                    ->prefixIcon('heroicon-m-user')
+                    ->columnSpanFull(),
 
                 // TextInput::make('email')
                 //     ->label('Email Address')

@@ -41,7 +41,8 @@ class Dashboard extends BaseDashboard
                         class="mt-6 w-full h-10 flex items-center justify-center rounded-lg bg-primary-600 text-white text-sm font-medium shadow hover:bg-primary-700 transition">
                         Click to Import Stock V2
                     </a>'
-                    )), */])
+                    )),
+             */])
             ->columns(2);
     }
     /* protected function getHeaderActions(): array
@@ -66,7 +67,6 @@ class Dashboard extends BaseDashboard
         return [
             SaleStats::class,
             ExpenseStats::class,
-            // SaleStats::class,
             LowStockProduct::class,
             // SaleActivityChart::class,
             // SaleChart::class,

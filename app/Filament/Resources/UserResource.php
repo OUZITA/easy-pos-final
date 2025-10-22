@@ -61,6 +61,8 @@ class UserResource extends Resource
                     ->revealable()
                     ->same('password')
                     ->label('Confirm Password'),
+                Forms\Components\TextInput::make('phone_number')
+                    ->required(),
             ]);
     }
 
@@ -78,6 +80,10 @@ class UserResource extends Resource
                         ->weight(FontWeight::Bold)
                         ->formatStateUsing(fn($record) => $record->name . ' (' . $record->role->name . ')'),
                     Tables\Columns\TextColumn::make('email')
+                        ->searchable(),
+                    Tables\Columns\TextColumn::make('phone_number')
+                        ->label('Contact')
+                        ->formatStateUsing(fn($state) => "Contact: {$state}")
                         ->searchable(),
                     Tables\Columns\IconColumn::make('active')
                         ->boolean(),
@@ -192,6 +198,17 @@ class UserResource extends Resource
             //
         ];
     }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()->role == Role::Admin;
+    }
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()->role == Role::Admin;
+    }
+
 
     public static function getPages(): array
     {

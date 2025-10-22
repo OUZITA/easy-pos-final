@@ -13,6 +13,13 @@ class ProductImport extends Model
     /** @use HasFactory<\Database\Factories\ProductImportFactory> */
     use HasFactory;
 
+    /*  protected $fillable = [
+        'user_id',
+        'supplier_id',
+        'import_date',
+        'note',
+    ]; */
+
     public function totalPrice()
     {
         return $this->items->sum(function ($item) {

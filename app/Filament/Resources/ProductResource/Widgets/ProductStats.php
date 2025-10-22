@@ -31,7 +31,7 @@ class ProductStats extends BaseWidget
                 $value = Product::select(DB::raw('SUM(stock * price) as total_value'))
                     ->value('total_value');
 
-                return '~ $' . number_format($value ?? 0, 2); // format to 2 decimal places
+                return '$' . number_format($value ?? 0, 2); // format to 2 decimal places
             }),
             //Stat::make('Average Price', '$ ' . number_format($this->getPageTableQuery()->avg('price'), 2)),
         ];

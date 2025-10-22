@@ -37,7 +37,9 @@ class User extends Authenticatable implements HasAvatar, FilamentUser
     protected static function booted(): void
     {
         static::creating(function (User $user) {
-            $user->role = Role::Cashier;
+            if (!$user->role) {
+                $user->role = Role::Cashier;
+            }
         });
     }
 

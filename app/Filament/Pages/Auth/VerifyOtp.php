@@ -68,7 +68,7 @@ class VerifyOtp extends SimplePage
     {
         try {
             // allow max 5 attempts per minute for this email
-            $this->rateLimit(5, decaySeconds: 60);
+            $this->rateLimit(3, decaySeconds: 60);
 
             $data = $this->form->getState();
 

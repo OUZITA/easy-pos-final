@@ -169,6 +169,7 @@ class SaleResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('Sale #')
+                    ->searchable()
                     ->formatStateUsing(fn($state) => Util::formatSaleId($state))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('customer.name')
@@ -284,7 +285,7 @@ class SaleResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make()->modalWidth('6xl')
                 /* ->modalHeading('Sale Information') */,
-                //Tables\Actions\EditAction::make(),
+                // Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
                     ->before(function (Sale $record) {
                         Log::info($record);

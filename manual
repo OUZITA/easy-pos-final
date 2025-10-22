@@ -1,0 +1,232 @@
+# TLGold POS System Setup Guide
+
+This guide provides step-by-step instructions to set up the TLGold POS (Point of Sale) system on a new PC. The system is built using Laravel 11 with Filament for the admin panel.
+
+# shoter instruction at the end.
+
+## Prerequisites
+
+Before starting, ensure the following software is installed on your system: (for php and Mysql , use laragon for ease of use)
+
+1. **PHP 8.1 or higher** (with extensions: BCMath, Ctype, Fileinfo, JSON, Mbstring, OpenSSL, PDO, Tokenizer, XML)
+
+    - Download from: https://www.php.net/downloads
+    - Add PHP to your system PATH
+
+2. **Composer** (PHP dependency manager)
+
+    - Download from: https://getcomposer.org/download/
+    - Install globally
+
+3. **Node.js 16 or higher** (with npm)
+
+    - Download from: https://nodejs.org/
+    - This is required for building frontend assets
+
+4. **MySQL 8.0 or higher** (or MariaDB)
+
+    - Download from: https://dev.mysql.com/downloads/mysql/
+    - Create a database user and database for the application
+
+5. **Git** (for cloning the repository)
+    - Download from: https://git-scm.com/downloads
+
+## Step 1: Clone the Repository (might already been done)
+
+Open a terminal/command prompt and navigate to your desired project directory:
+
+```bash
+cd /path/to/your/projects
+git clone <repository-url> tlgold-pos
+cd tlgold-pos
+```
+
+Replace `<repository-url>` with the actual Git repository URL.
+
+## Step 2: Install PHP Dependencies
+
+Install the required PHP packages using Composer:
+
+```bash
+composer install
+```
+
+This may take several minutes depending on your internet connection.
+
+## Step 3: Install Node.js Dependencies
+
+Install the required Node.js packages:
+
+```bash
+npm install
+```
+
+## Step 4: Environment Configuration
+
+1. Copy the environment example file:
+
+```bash
+cp .env.example .env
+```
+
+2. Edit the `.env` file with your preferred text editor:
+
+```bash
+# Database Configuration
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=tlgold_pos
+DB_USERNAME=your_db_username
+DB_PASSWORD=your_db_password
+
+# Application Configuration
+APP_NAME="TLGold POS"
+APP_ENV=local
+APP_KEY=
+APP_DEBUG=true
+APP_TIMEZONE=Asia/Bangkok
+APP_URL=http://localhost
+
+# Other settings (adjust as needed)
+MAIL_MAILER=log
+```
+
+Replace `your_db_username` and `your_db_password` with your MySQL credentials. Create a database named `tlgold_pos` in MySQL if it doesn't exist.
+
+## Step 5: Generate Application Key
+
+Generate a unique application key:
+
+```bash
+php artisan key:generate
+```
+
+## Step 6: Database Setup
+
+1. Ensure MySQL is running and you have created the database.
+
+2. Run the database migrations to create tables:
+
+```bash
+php artisan migrate
+```
+
+3. Seed the database with initial data (including admin user):
+
+```bash
+php artisan db:seed
+```
+
+This will create:
+
+-   An Admin user: `admin@gmail.com` with password `password`
+-   A Test Cashier user: `test@gmail.com` with password `password`
+-   Sample brands, categories, and other data
+
+## Step 7: Build Frontend Assets
+
+Compile the CSS and JavaScript assets:
+
+```bash
+npm run build
+```
+
+For development with hot reloading, you can use:
+
+```bash
+npm run dev
+```
+
+## Step 8: Start the Application
+
+Start the Laravel development server:
+
+```bash
+php artisan serve
+```
+
+The application will be available at: http://localhost:8000
+
+## Step 9: Access the Application
+
+1. Open your web browser and go to http://localhost:8000
+
+2. Click on "Login" or navigate to the admin panel
+
+3. Use the following credentials to log in:
+    - **Email:** admin@gmail.com
+    - **Password:** password
+
+## Additional Configuration
+
+### File Permissions (Linux/Mac)
+
+If you're on Linux or macOS, ensure proper permissions for storage and bootstrap/cache directories:
+
+```bash
+sudo chown -R $USER:www-data storage
+sudo chown -R $USER:www-data bootstrap/cache
+chmod -R 775 storage
+chmod -R 775 bootstrap/cache
+```
+
+### Queue Worker (Optional)
+
+If the application uses queues for background jobs, start the queue worker:
+
+```bash
+php artisan queue:work
+```
+
+### Testing
+
+Run the test suite to ensure everything is working:
+
+```bash
+php artisan test
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **PHP Extensions Missing**: Run `php -m` to check installed extensions. Install missing ones via your package manager or PHP installer.
+
+2. **Database Connection Failed**: Verify your `.env` database credentials and ensure MySQL is running.
+
+3. **Permission Denied**: On Windows, run your terminal as Administrator. On Linux/Mac, check file permissions.
+
+4. **Port 8000 Already in Use**: Change the port with `php artisan serve --port=8080`
+
+5. **Composer Memory Limit**: If composer install fails, increase memory limit: `php -d memory_limit=-1 /path/to/composer install`
+
+### Getting Help
+
+If you encounter issues not covered here, check:
+
+-   Laravel documentation: https://laravel.com/docs
+-   Filament documentation: https://filamentphp.com/docs
+-   Project README.md for additional information
+
+## Production Deployment
+
+For production deployment, additional steps are required:
+
+-   Set `APP_ENV=production` and `APP_DEBUG=false`
+-   Configure a proper web server (Apache/Nginx)
+-   Set up SSL certificates
+-   Configure environment-specific settings
+-   Run `php artisan config:cache` and `php artisan route:cache`
+
+This completes the basic setup for development. The system is now ready for use!
+
+# CLONE READY and Nginx file path already setup in laragon ( simple SHORT instruction )
+
+-   copy env.example and remove '.example' so you have the .env file (makes sure to modify as needed)
+-   run composer install or npm install
+-   run php artisan key:generate
+-   run php artisan migrate
+-   run php artisan db:seed
+-   run php artisan migrate --seed
+-   run php artisan storage:link

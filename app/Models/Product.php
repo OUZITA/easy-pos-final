@@ -59,7 +59,7 @@ class Product extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function productimportItems()
+    public function productImportItems()
     {
         return $this->hasMany(\App\Models\ProductImportItem::class);
     }

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('customer_id')->nullable()->nullOnDelete();
             $table->date('sale_date')->nullable();
             $table->text('note')->nullable();
+            $table->decimal('total_pay', 10)->nullable();
             // $table->boolean('active')->default(true);
             $table->timestamps();
         });

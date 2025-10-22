@@ -41,8 +41,7 @@ class LowStockProduct extends BaseWidget
                     ->searchable(),
                 Tables\Columns\TextColumn::make('price')
                     ->weight(FontWeight::Bold)
-                    ->money()
-                    ->sortable(),
+                    ->money(),
                 TextColumn::make('stock')
                     ->label('Current Stock')
                     ->sortable()
@@ -69,7 +68,6 @@ class LowStockProduct extends BaseWidget
                 Tables\Columns\TextColumn::make('category.name')
                     ->badge()
                     ->color('info'),
-
 
                 Tables\Columns\TextColumn::make('description')
                     ->toggleable(true)
@@ -101,11 +99,11 @@ class LowStockProduct extends BaseWidget
                     ->relationship('brand', 'name')
                     ->preload()
                     ->multiple(),
-                Tables\Filters\TernaryFilter::make('active')
+                /* Tables\Filters\TernaryFilter::make('active')
                     ->label('Status')
                     ->placeholder('All Products')
                     ->trueLabel('Active Products')
-                    ->falseLabel('Inactive Products')
+                    ->falseLabel('Inactive Products') */
             ])
             ->headerActions([
                 Actions\Action::make('to_import')

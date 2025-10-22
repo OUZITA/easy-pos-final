@@ -86,6 +86,7 @@ class BrandResource extends Resource
                     ->url(fn($state) => $state)
                     ->icon('heroicon-m-link')
                     ->tooltip('Click to open website')
+                    ->toggleable()
                     ->copyable()
                     ->copyMessage('Website URL copied!')
                     ->copyMessageDuration(1500)

@@ -21,23 +21,23 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         User::factory()->create([
-            'name' => 'D3mmy',
-            'email' => 'dummy@example.com',
+            'name' => 'Admin',
+            'email' => 'admin@gmail.com',
             'role' => Role::Admin,
             'active' => true
         ]);
 
         User::factory()->create([
             'name' => 'Test',
-            'email' => 'test@example.com',
+            'email' => 'test@gmail.com',
             'role' => Role::Cashier,
             'active' => true
         ]);
 
 
-        Customer::factory(10)->create();
+        //Customer::factory(10)->create();
 
-        Supplier::factory(10)->create();
+        //Supplier::factory(10)->create();
 
         $brands = ['Apple', 'Dell', 'Asus', 'Lenovo'];
 

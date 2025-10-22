@@ -3,7 +3,7 @@
 
 namespace App\Filament\Pages;
 
-
+use App\Enums\Gender;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
@@ -41,7 +41,6 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
     protected static string $view = 'filament.pages.shop-page';
     protected static ?string $title = '';
 
-
     protected static bool $shouldRegisterNavigation = false;
     /* public ?Sale $sale = null;
 
@@ -57,7 +56,6 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
         'customer_id' => null,
         'currency' => 'usd',
     ];
-
 
     public function form(Forms\Form $form): Forms\Form
     {
@@ -245,13 +243,11 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                                             Forms\Components\TextInput::make('phone')
                                                 ->maxLength(255),
                                             Forms\Components\Select::make('gender')
+                                                ->enum(Gender::class)
                                                 ->prefixIcon('heroicon-m-user-circle')
-                                                ->options([
-                                                    'male' => 'Male',
-                                                    'female' => 'Female',
-                                                ]),
+                                                ->options(Gender::class),
                                             Forms\Components\TextInput::make('address')
-                                                ->label('Address (optional)')
+                                                ->label('Address')
                                                 ->maxLength(255),
                                         ])
                                         ->createOptionUsing(function (array $data) {
