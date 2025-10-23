@@ -1,3 +1,5 @@
+# Warning tis manual is AI generated it may not work.
+
 # TLGold POS System Setup Guide
 
 This guide provides step-by-step instructions to set up the TLGold POS (Point of Sale) system on a new PC. The system is built using Laravel 11 with Filament for the admin panel.
@@ -219,7 +221,9 @@ For production deployment, additional steps are required:
 -   Configure environment-specific settings
 -   Run `php artisan config:cache` and `php artisan route:cache`
 
-This completes the basic setup for development. The system is now ready for use!
+# This completes the basic setup for development. The system is now ready for use!
+
+-   writter note:
 
 # CLONE READY and Nginx file path already setup in laragon ( simple SHORT instruction )
 
@@ -230,3 +234,4 @@ This completes the basic setup for development. The system is now ready for use!
 -   run php artisan db:seed
 -   run php artisan migrate --seed
 -   run php artisan storage:link
+-   run php artisan serve (to start the app)
