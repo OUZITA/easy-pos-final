@@ -299,9 +299,9 @@ class SaleResource extends Resource
                 ExportBulkAction::make()
                     ->color('primary')
                     ->exporter(SaleExporter::class)
-                    ->formats([
+                /* ->formats([
                         ExportFormat::Xlsx,
-                    ]),
+                    ]) */,
             ])
             // ->headerActions([
             //     ActionsExportAction::make()
