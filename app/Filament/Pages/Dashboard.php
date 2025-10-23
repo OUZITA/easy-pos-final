@@ -21,6 +21,24 @@ class Dashboard extends BaseDashboard
 {
     use BaseDashboard\Concerns\HasFiltersForm;
 
+    public function filtersForm(Form $form): Form
+    {
+        return $form
+            ->schema([
+                /*  Placeholder::make('new_import_btn')
+                    ->label('')
+
+                    ->content(new HtmlString(
+                        '<a href="' . ImportPageV2::getUrl() . '" 
+                        class="mt-6 w-full h-10 flex items-center justify-center rounded-lg bg-primary-600 text-white text-sm font-medium shadow hover:bg-primary-700 transition">
+                        Click to Import Stock V2
+                    </a>'
+                    )), */])
+
+
+            ->columns(2);
+    }
+
     public function getWidgets(): array
     {
         return [
