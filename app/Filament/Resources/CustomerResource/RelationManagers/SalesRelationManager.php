@@ -46,39 +46,25 @@ class SalesRelationManager extends RelationManager
     {
         return $infolist
             ->schema([
-                \Filament\Infolists\Components\Section::make('Sale Information')
+                \Filament\Infolists\Components\Section::make('Purchase Information')
                     ->schema([
                         Grid::make(3)
                             ->schema([
                                 TextEntry::make('id')
-                                    ->label('Sale ID')
+                                    ->label('Purchase ID')
                                     ->formatStateUsing(fn($state) => Util::formatSaleId($state))
                                     ->badge()
-                                    ->color('primary'),
+                                    ->color('success'),
 
                                 TextEntry::make('sale_date')
-                                    ->label('Sale Date')
+                                    ->label('Purchase Date')
+                                    ->badge()
+                                    ->color('success')
                                     ->date('d/m/Y')
                                     ->icon('heroicon-o-calendar-days'),
 
-                                TextEntry::make('created_at')
-                                    ->label('Created')
-                                    ->since()
-                                    ->icon('heroicon-o-clock'),
-                            ]),
-
-                        Grid::make(3)
-                            ->schema([
-
-                                TextEntry::make('customer.name')
-                                    ->label('Customer')
-                                    ->icon('heroicon-o-user')
-                                    ->badge()
-                                    ->color('success')
-                                    ->weight(FontWeight::SemiBold),
-
                                 TextEntry::make('user.name')
-                                    ->label('Created by')
+                                    ->label('Sold By')
                                     ->icon('heroicon-o-user-circle')
                                     ->badge()
                                     ->color('success'),
@@ -326,42 +312,78 @@ class SalesRelationManager extends RelationManager
             ->defaultSort('sale_date', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('id')
-                    ->label('Sale #')
+                    ->sortable()
+                    ->toggleable()
+                    ->label('Purchase ID')
                     ->weight(FontWeight::Bold)
                     ->formatStateUsing(fn($state) => Util::formatSaleId($state)),
-                Tables\Columns\TextColumn::make('sale_date')
-                    ->label('Sale Date')
-                    ->sortable()
-                    ->dateTime('d/m/Y')
-                    ->dateTooltip('d/M/Y')
-                    ->toggleable(),
                 Tables\Columns\TextColumn::make('products')
                     ->label('Products')
                     ->state(fn(Sale $record) => $record->listProducts()),
-
+                Tables\Columns\TextColumn::make('total_qty')
+                    ->weight(FontWeight::Bold)
+                    ->getStateUsing(fn(Sale $record) => $record->total_qty),
                 Tables\Columns\TextColumn::make('total_price')
                     ->money(currency: 'usd')
                     ->weight(FontWeight::Bold)
+                    ->color('danger')
                     ->sortable(query: fn(Builder $query, string $direction) => Sale::sortByTotalPrice($query, $direction))
                     ->formatStateUsing(fn($record) => '$' . number_format(
                         $record->items->sum(fn($item) => ($item->qty * $item->unit_price) * (1 - ($item->discount ?? 0) / 100)),
                         2
-                    ))
-                    ->color('success'),
+                    )),
+                Tables\Columns\TextColumn::make('sale_date')
+                    ->label('Purchase Date')
+                    ->sortable()
+                    ->dateTime('d/m/Y')
+                    ->dateTooltip('d/M/Y')
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('total_price')
+                    ->money(currency: 'usd')
+                    ->weight(FontWeight::Bold)
+                    ->color('success')
+                    ->sortable(query: fn(Builder $query, string $direction) => Sale::sortByTotalPrice($query, $direction))
+                    ->formatStateUsing(fn($record) => '$' . number_format(
+                        $record->items->sum(fn($item) => ($item->qty * $item->unit_price) * (1 - ($item->discount ?? 0) / 100)),
+                        2
+                    )),
                 Tables\Columns\TextColumn::make('note')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->html(),
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label('Created By')
+                    ->label('Sold By')
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('user')
+                    ->label('Sold By')
+                    ->relationship('user', 'name') // <- nested relation
+                    ->preload(),
+                Tables\Filters\SelectFilter::make('product')
+                    ->label('Product')
+                    ->options(function () {
+                        return Product::query()
+                            ->orderBy('name')
+                            ->pluck('name', 'id')
+                            ->toArray();
+                    })
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            filled($data['values']),
+                            fn(Builder $query): Builder => $query->whereHas(
+                                'items.product',
+                                fn(Builder $query): Builder => $query->whereIn('id', $data['values'])
+                            )
+                        );
+                    })
+                    ->multiple()
+                    ->preload(),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
+                    ->modalHeading('')
                     ->modalWidth('6xl'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),

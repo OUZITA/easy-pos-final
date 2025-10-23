@@ -165,7 +165,7 @@ class SaleResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-
+            ->recordUrl(null) //disable clickable row
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('Sale #')
@@ -254,7 +254,7 @@ class SaleResource extends Resource
                     ->preload()
                     ->searchable()
                     ->relationship('customer', titleAttribute: 'name'),
-                // Filter by total price 
+                // Filter by total price
                 Tables\Filters\SelectFilter::make('Seller')
                     ->preload()
                     ->searchable()
@@ -284,8 +284,8 @@ class SaleResource extends Resource
 
             ->actions([
                 Tables\Actions\ViewAction::make()->modalWidth('6xl')
-                /* ->modalHeading('Sale Information') */,
-                // Tables\Actions\EditAction::make(),
+                    ->modalHeading(''),
+                //Tables\Actions\EditAction::make(), //not use
                 Tables\Actions\DeleteAction::make()
                     ->before(function (Sale $record) {
                         Log::info($record);
@@ -612,7 +612,7 @@ class SaleResource extends Resource
             'create' => Pages\CreateSale::route('/create'),
             'invoice' => Pages\SaleInvoice::route('/{record}/invoice'),
             // 'view' => Pages\ViewSale::route('/{record}'),
-            'edit' => Pages\EditSale::route('/{record}/edit'),
+            //'edit' => Pages\EditSale::route('/{record}/edit'),
         ];
     }
 }

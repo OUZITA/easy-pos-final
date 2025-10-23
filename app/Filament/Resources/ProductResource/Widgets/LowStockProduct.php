@@ -40,6 +40,7 @@ class LowStockProduct extends BaseWidget
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('price')
+                    ->label('Sale Price')
                     ->weight(FontWeight::Bold)
                     ->money(),
                 TextColumn::make('stock')

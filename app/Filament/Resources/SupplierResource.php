@@ -93,7 +93,8 @@ class SupplierResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->label('Edit & History'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkAction::make('activate')
@@ -107,7 +108,7 @@ class SupplierResource extends Resource
                     ->color('danger')
                     ->action(fn(Collection $records) => $records->each->update(['active' => false])),
             ])
-            ->defaultSort('active', 'desc');
+            ->defaultSort('id', 'desc');
     }
 
     public static function infolist(Infolist $infolist): Infolist

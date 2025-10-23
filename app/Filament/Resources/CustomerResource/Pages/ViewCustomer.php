@@ -58,7 +58,7 @@ class ViewCustomer extends ViewRecord
                                 ->copyable()
                                 ->copyMessage('Phone number copied!')
                                 ->copyMessageDuration(1500)
-                                ->url(fn($record) => $record->phone ? 'tel:' . $record->phone : null)
+                                //->url(fn($record) => $record->phone ? 'tel:' . $record->phone : null)
                                 ->color('primary'),
 
                             TextEntry::make('address')

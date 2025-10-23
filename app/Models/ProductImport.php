@@ -74,7 +74,7 @@ class ProductImport extends Model
     {
         return static::query()
             ->whereMonth('import_date', now()->month)
-            ->whereYear('import_date', now()->year)            // ->with('items')
+            ->whereYear('import_date', now()->year)
             ->get()
             ->sum(function (ProductImport $productImport) {
                 return $productImport->totalPrice();
@@ -84,7 +84,7 @@ class ProductImport extends Model
     public static function totalExpenseThisYear()
     {
         return static::query()
-            ->whereYear('import_date', now()->year)            // ->with('items')
+            ->whereYear('import_date', now()->year)
             ->get()
             ->sum(function (ProductImport $productImport) {
                 return $productImport->totalPrice();

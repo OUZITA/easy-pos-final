@@ -22,7 +22,6 @@ class EditSale extends EditRecord
         return $data;
     }
 
-
     protected function beforeSave()
     {
         Log::info($this->record);

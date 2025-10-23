@@ -15,7 +15,6 @@ use App\Filament\Pages\Auth\VerifyOtp;
 use App\Filament\Pages\Auth\ResetPassword;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\ImportPageV2;
-use App\Http\Middleware\EnsureUserIsActive;
 use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
 use Filament\Pages\Auth\Register;
@@ -45,7 +44,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->globalSearch(false)
             ->path('admin')
-            ->login(/* Login::class */)
+            ->login(Login::class)
             ->passwordReset(RequestPasswordReset::class)
             ->registration(Register::class)
             ->emailVerification()
@@ -65,7 +64,6 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Dashboard::class,
-                // ImportPageV2::class,
                 VerifyOtp::class,
                 ResetPassword::class,
             ])
@@ -76,7 +74,6 @@ class AdminPanelProvider extends PanelProvider
             // SaleChart::class
             // ])
             ->middleware([
-                // EnsureUserIsActive::class,
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,

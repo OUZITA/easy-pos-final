@@ -21,9 +21,6 @@ class PasswordResetOtp extends Model
 
     public static function generateOtp(string $email): string
     {
-        // Clean up old OTPs for this email
-        // static::where('email', $email)->delete();
-
         // Generate 6-digit OTP
         $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 

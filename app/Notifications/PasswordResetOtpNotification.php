@@ -17,16 +17,7 @@ class PasswordResetOtpNotification extends Notification
         return ['mail'];
     }
 
-    // public function toMail($notifiable): MailMessage
-    // {
-    //     return (new MailMessage)
-    //         ->subject(subject: __('Password Reset Verification Code'))
-    //         ->line(__('You are receiving this email because we received a password reset request for your account.'))
-    //         ->line(__('Your verification code is:'))
-    //         ->line('**' . $this->otp . '**')
-    //         ->line(__('This code will expire in 10 minutes.'))
-    //         ->line(__('If you did not request a password reset, no further action is required.'));
-    // }
+    // Send OTP template with OTP Code
     public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)

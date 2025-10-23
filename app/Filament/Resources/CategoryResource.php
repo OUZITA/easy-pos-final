@@ -48,8 +48,11 @@ class CategoryResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('id', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('id')
+                    ->sortable()
+                    ->toggleable()
                     ->label('Category ID'),
                 Tables\Columns\TextColumn::make('name')
                     ->sortable()
@@ -75,7 +78,8 @@ class CategoryResource extends Resource
                     ->falseLabel('Inactive')
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->label('Edit & Catalog'),
             ])
             ->bulkActions([
                 ExportBulkAction::make()

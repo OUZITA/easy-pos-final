@@ -38,7 +38,7 @@ class ProductsRelationManager extends RelationManager
                                     ->unique(ignoreRecord: true)
                                     ->live(),
                                 Forms\Components\TextInput::make('price')
-                                    ->label('Price')
+                                    ->label('Sale Price')
                                     ->required()
                                     ->numeric()
                                     ->rule('numeric')
@@ -74,19 +74,6 @@ class ProductsRelationManager extends RelationManager
                                             $set('price', $state);
                                         }
                                     }),
-                                Forms\Components\Select::make('category_id')
-                                    ->label('Category')
-                                    ->options(Category::where('active', true)->pluck('name', 'id'))
-                                    ->required()
-                                    ->searchable()
-                                    ->placeholder('Select category')
-                                    ->createOptionForm([
-                                        Forms\Components\TextInput::make('name')
-                                            ->required()
-                                            ->unique(Category::class, 'name')
-                                            ->maxLength(255),
-                                    ])
-                                    ->createOptionUsing(fn(array $data) => Category::create($data)->id),
                                 Forms\Components\Select::make('brand_id')
                                     ->label('Brand')
                                     ->options(\App\Models\Brand::where('active', true)->pluck('name', 'id'))
@@ -158,6 +145,12 @@ class ProductsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('name')
             ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->label('ID')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->searchable()
+                    ->sortable()
+                    ->weight('medium'),
                 Tables\Columns\ImageColumn::make('image')
                     ->label('Image')
                     ->size(60)
@@ -169,13 +162,13 @@ class ProductsRelationManager extends RelationManager
                     ->sortable()
                     ->weight('medium'),
 
-                Tables\Columns\TextColumn::make('brand.name')
-                    ->label('Brand')
+                Tables\Columns\TextColumn::make('category.name')
+                    ->label('Category')
                     ->badge()
                     ->color('info'),
 
                 Tables\Columns\TextColumn::make('price')
-                    ->label('Price')
+                    ->label('Sale Price')
                     ->money()
                     ->sortable(),
 

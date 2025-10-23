@@ -26,13 +26,10 @@ class Product extends Model
         );
     }
 
-
     public function scopeWithSoldCount($query)
     {
         return $query->withSum('saleItems', 'qty');
     }
-
-
 
     public function importItems(): HasMany
     {

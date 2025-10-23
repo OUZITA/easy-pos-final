@@ -68,7 +68,7 @@ class ProductResource extends Resource
                                     ->unique(ignoreRecord: true),
 
                                 Forms\Components\TextInput::make('price')
-                                    ->label('Price')
+                                    ->label('Sale Price')
                                     ->required()
                                     ->numeric()
                                     ->lazy()
@@ -207,6 +207,7 @@ class ProductResource extends Resource
             ->query(Product::withSoldCount())
             ->columns([
                 Tables\Columns\TextColumn::make('id')
+                    ->sortable()
                     ->label('ID')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\ImageColumn::make('image')
@@ -273,6 +274,11 @@ class ProductResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('user')
+                    ->label('Created By')
+                    ->relationship('user', 'name')
+                    ->preload()
+                    ->multiple(),
                 Tables\Filters\SelectFilter::make('category')
                     ->relationship('category', 'name')
                     ->preload()
@@ -292,6 +298,7 @@ class ProductResource extends Resource
                     ->modalHeading('')
                     ->modalWidth('5xl'),
                 Tables\Actions\EditAction::make()
+                    ->label('Edit & History')
                     ->hidden(fn() => Auth::user()?->role === Role::Cashier),
             ])
 

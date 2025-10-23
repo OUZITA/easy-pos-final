@@ -117,5 +117,4 @@ class Sale extends Model
             get: fn() => max(0, (float) $this->total_pay - (float) $this->total_price)
         );
     }
-    // Removed totalPay attribute setter - conversion now handled in ShopPage checkout method
 }

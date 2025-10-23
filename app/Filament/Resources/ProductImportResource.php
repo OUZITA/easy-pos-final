@@ -268,17 +268,18 @@ class ProductImportResource extends Resource
     {
         return $infolist
             ->schema([
-                \Filament\Infolists\Components\Section::make('Product Import Information')
+                \Filament\Infolists\Components\Section::make('Product Stock in Information')
+
                     ->schema([
                         Grid::make(3)
                             ->schema([
                                 TextEntry::make('id')
-                                    ->label('Import ID')
+                                    ->label('Stock In ID')
                                     ->badge()
-                                    ->color('primary'),
+                                    ->color('success'),
 
                                 TextEntry::make('import_date')
-                                    ->label('Import Date')
+                                    ->label('Stock in Date')
                                     ->date('d/m/Y')
                                     ->icon('heroicon-o-calendar-days'),
 
@@ -292,9 +293,9 @@ class ProductImportResource extends Resource
                             ->schema([
                                 TextEntry::make('supplier.name')
                                     ->label('Supplier')
-                                    ->icon('heroicon-o-building-office-2')
-                                    ->weight(FontWeight::SemiBold),
-
+                                    ->badge()
+                                    ->color('success')
+                                    ->icon('heroicon-o-building-office-2'),
 
                                 TextEntry::make('user.name')
                                     ->label('Created by')
@@ -355,12 +356,11 @@ class ProductImportResource extends Resource
                                             ->money('USD'),
                                         // ->icon('heroicon-o-currency-dollar'),
 
-
                                         TextEntry::make('sub_total')
                                             ->label('Sub Total')
                                             ->money('USD')
                                             ->weight(FontWeight::Bold)
-                                            ->color('success')
+                                            ->color('danger')
                                             ->state(function ($record) {
                                                 return $record->qty * $record->unit_price;
                                             }),
@@ -402,7 +402,7 @@ class ProductImportResource extends Resource
                                     ->money('USD')
                                     ->size('lg')
                                     ->weight(FontWeight::Bold)
-                                    ->color('success')
+                                    ->color('danger')
                                     ->icon('heroicon-o-currency-dollar'),
                             ])
                     ]),
@@ -419,6 +419,7 @@ class ProductImportResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->recordUrl(null) //disable clickable row
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')
@@ -436,8 +437,8 @@ class ProductImportResource extends Resource
                     ->sortable(query: function (Builder $query, string $direction): Builder {
                         $result =  $query
                             ->select('product_imports.*')
-                            ->selectRaw('(SELECT SUM(qty) 
-              FROM product_import_items 
+                            ->selectRaw('(SELECT SUM(qty)
+              FROM product_import_items
               WHERE product_import_items.product_import_id = product_imports.id) as total_qty')
                             ->orderBy('total_qty', $direction);
 
@@ -551,10 +552,10 @@ class ProductImportResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make()
                     ->modalWidth('6xl')
-                    ->modalHeading('Stock In Information'), // 👈 disables "View Stock In"
+                    ->modalHeading(''),
                 //->label('Details'), // optional custom label,
-                Tables\Actions\EditAction::make()
-                    ->hidden(fn() => Auth::user()?->role === Role::Cashier),
+                Tables\Actions\EditAction::make(),
+                //->hidden(fn() => Auth::user()?->role === Role::Cashier),
                 Tables\Actions\DeleteAction::make()
                     ->hidden(fn() => Auth::user()?->role === Role::Cashier)
                     ->before(function (ProductImport $record) {

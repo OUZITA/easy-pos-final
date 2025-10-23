@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Filament\Resources\SaleResource\Widgets;
 
 use App\Filament\Resources\ProductResource;
@@ -17,6 +18,7 @@ class SaleStats extends BaseWidget
 
         return [
             Stat::make('Today Sale', '$ ' . number_format(Sale::totalSaleForToday(), 2))
+                ->color('success')
                 ->url(SaleResource::getUrl('index') . '?tableFilters[sale_date][sale_from]=' . now()->toDateString() . '&tableFilters[sale_date][sale_until]=' . now()->toDateString()),
 
             Stat::make('Total Sale this month (' . $currentMonth . ')', '$ ' . number_format(Sale::totalSaleForThisMonth(), 2))

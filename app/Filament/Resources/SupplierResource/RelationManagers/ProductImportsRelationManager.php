@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\SupplierResource\RelationManagers;
 
+use App\Models\Product;
 use App\Models\ProductImport;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -46,10 +47,24 @@ class ProductImportsRelationManager extends RelationManager
             ->recordTitleAttribute('name')
             ->columns([
                 Tables\Columns\TextColumn::make('id')
-                    ->label('Sale ID')
+                    ->toggledHiddenByDefault(true)
+                    ->label('Stock in ID')
                     ->searchable()
                     ->toggleable(),
+                Tables\Columns\TextColumn::make('import_date')
+                    ->label('Stock In Date')
+                    ->date('d/m/Y')
+                    ->dateTooltip('d/M/Y')
+                    ->sortable(),
 
+                Tables\Columns\TextColumn::make('products')
+                    ->wrap()
+                    ->getStateUsing(fn(ProductImport $record) => $record->listProducts()),
+
+                Tables\Columns\TextColumn::make('qty')
+                    ->label('Total Qty')
+                    ->weight(FontWeight::Bold)
+                    ->getStateUsing(fn(ProductImport $record) => $record->totalQty()),
                 Tables\Columns\TextColumn::make('total_price')
                     ->money(currency: 'usd')
                     ->color('danger')
@@ -59,14 +74,9 @@ class ProductImportsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('note')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->html(),
-
-                Tables\Columns\TextColumn::make('import_date')
-                    ->date('d/m/Y')
-                    ->dateTooltip('d/M/Y')
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('user.name')
                     ->toggleable()
-                    ->label('Imported By'),
+                    ->label('Stocked By'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -77,15 +87,38 @@ class ProductImportsRelationManager extends RelationManager
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
-            ])
-            ->headerActions([
+                Tables\Filters\SelectFilter::make('user')
+                    ->label('Stock By')
+                    ->relationship('user', 'name')
+                    ->preload()
+                    ->searchable(),
+                Tables\Filters\SelectFilter::make('product')
+                    ->label('Product')
+                    ->options(function () {
+                        return Product::query()
+                            ->orderBy('name')
+                            ->pluck('name', 'id')
+                            ->toArray();
+                    })
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            filled($data['values']),
+                            fn(Builder $query): Builder => $query->whereHas(
+                                'items.product',
+                                fn(Builder $query): Builder => $query->whereIn('id', $data['values'])
+                            )
+                        );
+                    })
+                    ->multiple()
+                    ->preload(),
+            ])->headerActions([
                 Tables\Actions\CreateAction::make(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
-                    ->label('View Details')
-                    ->modalHeading(fn(ProductImport $record) => 'Stock In Details — #' . $record->id)
+                    ->label('View')
+                    //->modalHeading(fn(ProductImport $record) => 'Stock In Details — #' . $record->id)
+                    ->modalHeading('')
                     ->modalWidth('7xl'),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
@@ -108,36 +141,19 @@ class ProductImportsRelationManager extends RelationManager
                                 TextEntry::make('id')
                                     ->label('Stock in ID')
                                     ->badge()
-                                    ->color('primary'),
+                                    ->color('success'),
 
                                 TextEntry::make('import_date')
                                     ->label('Stock in Date')
+                                    ->badge()
+                                    ->color('success')
                                     ->date('d/m/Y')
                                     ->icon('heroicon-o-calendar-days'),
-
-                                TextEntry::make('created_at')
-                                    ->label('Created')
-                                    ->since()
-                                    ->icon('heroicon-o-clock'),
-                            ]),
-
-                        Grid::make(3)
-                            ->schema([
-                                TextEntry::make('supplier.name')
-                                    ->label('Supplier')
-                                    ->icon('heroicon-o-building-office-2')
-                                    ->weight(FontWeight::SemiBold),
-
                                 TextEntry::make('user.name')
-                                    ->label('Created by')
+                                    ->label('Stock by')
                                     ->icon('heroicon-o-user-circle')
                                     ->badge()
                                     ->color('success'),
-
-                                TextEntry::make('updated_at')
-                                    ->label('Updated')
-                                    ->since()
-                                    ->icon('heroicon-o-clock'),
                             ]),
                         Grid::make(1)
                             ->schema([
@@ -153,7 +169,7 @@ class ProductImportsRelationManager extends RelationManager
                     ->columns(1),
 
                 \Filament\Infolists\Components\Section::make('Product Items')
-                    ->description('Detailed of purchased products')
+                    // ->description('Detailed of purchased products')
                     ->collapsed(false)
                     ->icon('heroicon-o-cube')
                     ->schema([
@@ -171,7 +187,6 @@ class ProductImportsRelationManager extends RelationManager
                                         TextEntry::make('product.name')
                                             ->label('Product')
                                             ->weight(FontWeight::SemiBold),
-
 
                                         TextEntry::make('qty')
                                             ->label('Quantity')
@@ -197,7 +212,7 @@ class ProductImportsRelationManager extends RelationManager
                                             ->label('Sub Total')
                                             ->money('USD')
                                             ->weight(FontWeight::Bold)
-                                            ->color('success')
+                                            ->color('danger')
                                             ->state(function ($record) {
                                                 return $record->qty * $record->unit_price;
                                             }),
@@ -238,7 +253,7 @@ class ProductImportsRelationManager extends RelationManager
                                     ->money('USD')
                                     ->size('lg')
                                     ->weight(FontWeight::Bold)
-                                    ->color('success')
+                                    ->color('danger')
                                     ->icon('heroicon-o-currency-dollar'),
                             ])
                     ])

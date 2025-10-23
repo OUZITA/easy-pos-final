@@ -76,6 +76,11 @@ class BrandResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->label('ID')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                //->searchable(),
                 Tables\Columns\ImageColumn::make('logo')
                     ->defaultImageUrl(fn(Brand $record) => Util::getDefaultAvatar($record->name)),
                 Tables\Columns\TextColumn::make('name')
@@ -87,9 +92,9 @@ class BrandResource extends Resource
                     ->icon('heroicon-m-link')
                     ->tooltip('Click to open website')
                     ->toggleable()
-                    ->copyable()
-                    ->copyMessage('Website URL copied!')
-                    ->copyMessageDuration(1500)
+                    //->copyable()
+                    //->copyMessage('Website URL copied!')
+                    //->copyMessageDuration(1500)
                     ->openUrlInNewTab(),
                 Tables\Columns\TextColumn::make('made_in')
                     ->badge()
@@ -116,7 +121,8 @@ class BrandResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->label('Edit & Catalog'),
             ])
             ->bulkActions([
                 ExportBulkAction::make()

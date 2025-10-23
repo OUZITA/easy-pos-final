@@ -22,9 +22,7 @@ use Illuminate\Contracts\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Contracts\Database\Query\Builder as QueryBuilder;
 use function Livewire\of;
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
+// PLayground
 Route::get('/receipt/print/{sale}', [ReceiptController::class, 'print'])->name('receipt.print');
 
 // OTP Password Reset Routes

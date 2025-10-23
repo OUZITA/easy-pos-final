@@ -67,6 +67,7 @@ class CustomerResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('id', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('ID')
@@ -113,7 +114,8 @@ class CustomerResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->label('Edit & History'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkAction::make('activate')
@@ -188,7 +190,7 @@ class CustomerResource extends Resource
                                 ->copyable()
                                 ->copyMessage('Phone number copied!')
                                 ->copyMessageDuration(1500)
-                                ->url(fn($record) => $record->phone ? 'tel:' . $record->phone : null)
+                                //->url(fn($record) => $record->phone ? 'tel:' . $record->phone : null)
                                 ->color('primary'),
 
                             TextEntry::make('address')

@@ -87,19 +87,6 @@ class ProductsRelationManager extends RelationManager
                                             ->maxLength(255),
                                     ])
                                     ->createOptionUsing(fn(array $data) => Category::create($data)->id),
-                                Forms\Components\Select::make('brand_id')
-                                    ->label('Brand')
-                                    ->options(\App\Models\Brand::where('active', true)->pluck('name', 'id'))
-                                    ->required()
-                                    ->searchable()
-                                    ->placeholder('Select brand')
-                                    ->createOptionForm([
-                                        Forms\Components\TextInput::make('name')
-                                            ->required()
-                                            ->unique(\App\Models\Brand::class, 'name')
-                                            ->maxLength(255),
-                                    ])
-                                    ->createOptionUsing(fn(array $data) => \App\Models\Brand::create($data)->id),
                                 Forms\Components\TextInput::make('stock_security')
                                     ->label('Low Stock Alert')
                                     ->required()
@@ -122,6 +109,7 @@ class ProductsRelationManager extends RelationManager
                             ]),
 
                         Forms\Components\RichEditor::make('description')
+                            ->nullable()
                             ->label('Product Description')
                             ->placeholder('Describe your product in detail...')
                             ->columnSpanFull(),
@@ -136,6 +124,7 @@ class ProductsRelationManager extends RelationManager
                         Forms\Components\FileUpload::make('image')
                             ->label('Product Image')
                             ->image()
+                            ->nullable()
                             ->preserveFilenames()
                             ->imageEditor()
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])

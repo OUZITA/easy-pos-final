@@ -62,13 +62,14 @@ class UserResource extends Resource
                     ->same('password')
                     ->label('Confirm Password'),
                 Forms\Components\TextInput::make('phone_number')
-                    ->required(),
+                    ->nullable(),
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
+            ->recordUrl(fn(User $record) => $record->role == Role::Admin ? null : UserResource::getUrl('edit', ['record' => $record]))
             ->modifyQueryUsing(fn(Builder $query) => $query->where('id', '!=', auth()->id()))
             ->columns([
                 Stack::make([
@@ -122,76 +123,6 @@ class UserResource extends Resource
             );
     }
 
-    // public static function table(Table $table): Table
-    // {
-    //     return $table
-    //         ->columns([
-    //             Split::make([
-    //                 Stack::make([
-    //                     Tables\Columns\ImageColumn::make('avatar_url')
-    //                         ->defaultImageUrl(fn(User $record) => User::getDefaultAvatar($record->name))
-    //                         ->label('Avatar')
-    //                         ->circular(),
-    //                     Tables\Columns\TextColumn::make('name')
-    //                         ->weight(FontWeight::Bold)
-    //                         ->sortable()
-    //                         ->searchable(),
-    //                 ])->alignment(Alignment::Center)
-    //                     ->space(2),
-
-    //                 Tables\Columns\IconColumn::make('active')
-    //                     ->boolean(),
-    //                 Tables\Columns\TextColumn::make('created_at')
-    //                     ->dateTime('d/m/y h:m:s')
-    //                     ->sortable()
-    //                     ->toggleable(isToggledHiddenByDefault: true),
-    //                 Tables\Columns\TextColumn::make('updated_at')
-    //                     ->dateTime()
-    //                     ->sortable()
-    //                     ->toggleable(isToggledHiddenByDefault: true),
-    //             ])
-    //                 ->visibleFrom('md'),
-    //             Panel::make([
-    //                 Tables\Columns\TextColumn::make('email')
-    //                     ->searchable(),
-    //                 Tables\Columns\TextColumn::make('role')
-    //                     ->badge()
-    //                     ->color(function ($state) {
-    //                         return $state->getColor();
-    //                     }),
-    //             ])->collapsible(false)
-    //         ])
-    //         ->filters([
-    //             Tables\Filters\SelectFilter::make('role')
-    //                 ->options(Role::class),
-    //             Tables\Filters\TernaryFilter::make('active')
-    //                 ->label('Status')
-    //                 ->placeholder('All Users')
-    //                 ->trueLabel('Active Users')
-    //                 ->falseLabel('Inactive Users'),
-    //         ])
-    //         ->actions([
-    //             Tables\Actions\Action::make('edit')
-    //                 ->url(fn($record) => UserResource::getUrl('edit', ['record' => $record]))
-    //                 ->icon('heroicon-m-pencil-square')
-    //         ])
-    //         ->bulkActions([
-    //             Tables\Actions\BulkAction::make('activate')
-    //                 ->requiresConfirmation()
-    //                 ->label('Activate Selected')
-    //                 ->icon('heroicon-m-check-circle')
-    //                 ->color('success')
-    //                 ->action(fn(Collection $records) => $records->each->update(['active' => true])),
-    //             Tables\Actions\BulkAction::make('deactivate')
-    //                 ->requiresConfirmation()
-    //                 ->label('Deactivate Selected')
-    //                 ->icon('heroicon-m-x-circle')
-    //                 ->color('danger')
-    //                 ->action(fn(Collection $records) => $records->each->update(['active' => false])),
-    //         ])
-    //         ->defaultSort('active', 'desc');
-    // }
-
     public static function getRelations(): array
     {
         return [
@@ -201,12 +132,12 @@ class UserResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()->role == Role::Admin;
+        return auth()->user()->isAdmin();
     }
 
     public static function canAccess(): bool
     {
-        return auth()->user()->role == Role::Admin;
+        return auth()->user()->isAdmin();
     }
 
 
@@ -215,7 +146,7 @@ class UserResource extends Resource
         return [
             'index' => Pages\ListUsers::route('/'),
             'create' => Pages\CreateUser::route('/create'),
-            // 'edit' => Pages\EditUser::route('/{record}/edit'),
+            'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
     }
 }
