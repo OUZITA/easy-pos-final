@@ -38,13 +38,13 @@ class ProductImportItemsRelationManager extends RelationManager
             ->recordTitleAttribute('id')
             ->defaultSort('productImport.import_date', 'desc')
             ->columns([
+                Tables\Columns\TextColumn::make('product_import_id')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->label('Stock In ID'),
                 Tables\Columns\TextColumn::make('productImport.import_date')
                     ->dateTooltip('d/M/Y')
                     ->sortable()
                     ->label('Stock In Date'),
-                Tables\Columns\TextColumn::make('product_import_id')
-                    ->toggleable(isToggledHiddenByDefault: false)
-                    ->label('ID'),
                 Tables\Columns\TextColumn::make('product.name')
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('qty')

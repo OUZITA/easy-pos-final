@@ -164,7 +164,7 @@ class ProductsRelationManager extends RelationManager
                     ->color('info'),
 
                 Tables\Columns\TextColumn::make('price')
-                    ->label('Price')
+                    ->label('Sale Price')
                     ->money()
                     ->sortable(),
 

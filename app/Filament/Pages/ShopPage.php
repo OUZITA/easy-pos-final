@@ -536,24 +536,24 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                         ->limit(30)
                         ->extraAttributes(['class' => 'whitespace-normal']),
 
-                    /* TextColumn::make('description')
-                        ->label('Description')
-                        ->limit(100)
-                        ->wrap()
-                        ->extraAttributes([
-                            'style' => 'min-height:50px; display:block; overflow:hidden;'
-                        ])
-                        ->formatStateUsing(fn($state) => strip_tags($state)), */
+                    // /* TextColumn::make('description')
+                    //     ->label('Description')
+                    //     ->limit(100)
+                    //     ->wrap()
+                    //     ->extraAttributes([
+                    //         'style' => 'min-height:50px; display:block; overflow:hidden;'
+                    //     ])
+                    //     ->formatStateUsing(fn($state) => strip_tags($state)), */
 
-                    /* TextColumn::make('brand.name')
-                        ->badge()
-                        ->color('info')
-                        ->weight('normal'),
+                    // /* TextColumn::make('brand.name')
+                    //     ->badge()
+                    //     ->color('info')
+                    //     ->weight('normal'),
 
-                    TextColumn::make('category.name')
-                        ->badge()
-                        ->color('info')
-                        ->weight('normal'), */
+                    // TextColumn::make('category.name')
+                    //     ->badge()
+                    //     ->color('info')
+                    //     ->weight('normal'), */
 
                     TextColumn::make('price')
                         ->formatStateUsing(fn($state) => '$' . number_format($state, 2))
@@ -572,8 +572,6 @@ class ShopPage extends Page implements Tables\Contracts\HasTable, Forms\Contract
                         ->label('')
                         ->formatStateUsing(fn($record) => view('components.add-to-cart-button', ['record' => $record]))
                         ->html()
-
-
                 ])
             ])
 

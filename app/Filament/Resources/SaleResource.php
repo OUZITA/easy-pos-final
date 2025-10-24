@@ -165,7 +165,7 @@ class SaleResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->recordUrl(null) //disable clickable row
+            // ->recordUrl(null) //disable clickable row
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('Sale #')
@@ -173,7 +173,7 @@ class SaleResource extends Resource
                     ->formatStateUsing(fn($state) => Util::formatSaleId($state))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('customer.name')
-                    ->tooltip('View customer information')
+                    // ->tooltip('View customer information')
                     ->searchable()
                     ->sortable(),
                 // ->url(
@@ -254,12 +254,6 @@ class SaleResource extends Resource
                     ->preload()
                     ->searchable()
                     ->relationship('customer', titleAttribute: 'name'),
-                // Filter by total price
-                Tables\Filters\SelectFilter::make('Seller')
-                    ->preload()
-                    ->searchable()
-                    ->multiple()
-                    ->relationship('user', 'name'),
                 Tables\Filters\SelectFilter::make('product')
                     ->label('Product')
                     ->options(function () {
@@ -280,6 +274,12 @@ class SaleResource extends Resource
                     // ->searchable()
                     ->multiple()
                     ->preload(),
+                Tables\Filters\SelectFilter::make('Seller')
+                    ->preload()
+                    ->searchable()
+                    ->multiple()
+                    ->relationship('user', 'name'),
+
             ])
 
             ->actions([
@@ -380,7 +380,6 @@ class SaleResource extends Resource
                                     ->color('success')
                                     ->weight(FontWeight::SemiBold)
                                     ->size('lg'),
-
 
                                 TextEntry::make('customer.phone')
                                     ->label('Phone Number')

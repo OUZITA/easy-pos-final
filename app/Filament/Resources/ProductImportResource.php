@@ -542,6 +542,7 @@ class ProductImportResource extends Resource
                     ->searchable()
                     ->multiple(),
                 Tables\Filters\SelectFilter::make('importer')
+                    ->label('Stock In By')
                     ->relationship('user', 'name')
                     ->preload()
                     ->searchable()

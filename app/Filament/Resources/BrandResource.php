@@ -98,6 +98,7 @@ class BrandResource extends Resource
                     ->openUrlInNewTab(),
                 Tables\Columns\TextColumn::make('made_in')
                     ->badge()
+                    ->color('success')
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\IconColumn::make('active')
@@ -120,7 +121,8 @@ class BrandResource extends Resource
 
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->modalHeading(''),
                 Tables\Actions\EditAction::make()
                     ->label('Edit & Catalog'),
             ])
@@ -139,10 +141,10 @@ class BrandResource extends Resource
         return $infolist
             ->schema([
                 \Filament\Infolists\Components\Section::make('Brand Information')
-                    ->description('Basic brand details and identity')
+                    // ->description('Basic brand details and identity')
                     ->icon('heroicon-m-bookmark-square')
                     ->schema([
-                        \Filament\Infolists\Components\Grid::make(2)
+                        \Filament\Infolists\Components\Grid::make(3)
                             ->schema([
                                 \Filament\Infolists\Components\TextEntry::make('name')
                                     ->label('Brand Name')
@@ -154,21 +156,22 @@ class BrandResource extends Resource
                                     ->label('Made In')
                                     ->icon('heroicon-m-globe-americas')
                                     ->badge()
-                                    ->color('info'),
+                                    ->color('success'),
+                                \Filament\Infolists\Components\TextEntry::make('website')
+                                    ->label('Official Website')
+                                    ->icon('heroicon-m-link')
+                                    ->url(fn($state) => $state)
+                                    ->openUrlInNewTab()
+                                    ->copyable()
+                                    ->copyMessage('Website URL copied!')
+                                    ->copyMessageDuration(1500),
                             ]),
 
-                        \Filament\Infolists\Components\TextEntry::make('website')
-                            ->label('Official Website')
-                            ->icon('heroicon-m-link')
-                            ->url(fn($state) => $state)
-                            ->openUrlInNewTab()
-                            ->copyable()
-                            ->copyMessage('Website URL copied!')
-                            ->copyMessageDuration(1500),
+
                     ]),
 
                 \Filament\Infolists\Components\Section::make('Brand Media')
-                    ->description('Brand logo and visual identity')
+                    // ->description('Brand logo and visual identity')
                     ->icon('heroicon-m-photo')
                     ->schema([
                         \Filament\Infolists\Components\ImageEntry::make('logo')

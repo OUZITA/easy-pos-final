@@ -113,7 +113,8 @@ class CustomerResource extends Resource
                     ->falseLabel('Inactive')
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->modalHeading(''),
                 Tables\Actions\EditAction::make()
                     ->label('Edit & History'),
             ])
@@ -135,16 +136,15 @@ class CustomerResource extends Resource
     {
         return $infolist
             ->schema([
-                Section::make('Personal Information')
-                    ->description('Customer basic details')
+                Section::make('Customer Information')
                     ->icon('heroicon-m-identification')
                     ->schema([
                         Grid::make(3)->schema([
                             TextEntry::make('name')
-                                ->label('Customer Name')
-                                ->icon('heroicon-m-user')
-                                ->weight(FontWeight::Bold)
-                                ->size(TextEntry\TextEntrySize::Large),
+                                ->label('Name')
+                                ->icon('heroicon-m-user'),
+                            // ->weight(FontWeight::Bold)
+                            // ->size(TextEntry\TextEntrySize::Large),
 
                             TextEntry::make('gender')
                                 ->label('Gender')
@@ -240,7 +240,7 @@ class CustomerResource extends Resource
                     ->schema([
                         Grid::make(3)->schema([
                             TextEntry::make('sales_count')
-                                ->label('Total Sales')
+                                ->label('Total Purchase')
                                 ->icon('heroicon-m-shopping-cart')
                                 ->state(function ($record) {
                                     return $record->sales()->count();
@@ -264,7 +264,7 @@ class CustomerResource extends Resource
                                 ->color('success'),
 
                             TextEntry::make('last_sale')
-                                ->label('Last Sale')
+                                ->label('Last Purchase')
                                 ->icon('heroicon-m-calendar')
                                 ->state(function ($record) {
                                     $lastSale = $record->sales()->latest()->first();

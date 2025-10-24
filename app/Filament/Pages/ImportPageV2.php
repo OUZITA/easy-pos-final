@@ -3,6 +3,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\Role;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
@@ -630,6 +631,7 @@ class ImportPageV2 extends Page implements Tables\Contracts\HasTable, Forms\Cont
             ->headerActions([
                 Actions\Action::make('create_product_inline')
                     ->label('Add New Product')
+                    ->visible(fn() => Auth::user()?->role !== Role::Cashier)
                     ->icon('heroicon-o-plus')
                     ->form([
                         \Filament\Forms\Components\Section::make('Product Information')
