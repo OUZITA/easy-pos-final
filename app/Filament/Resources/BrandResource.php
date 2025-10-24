@@ -128,10 +128,9 @@ class BrandResource extends Resource
             ])
             ->bulkActions([
                 ExportBulkAction::make()
-                    ->label('Export Selected Categories')
+                    ->label('Export Brands')
                     ->color('primary')
                     ->exporter(BrandExporter::class)
-
             ])
             ->defaultSort('active', 'desc');
     }

@@ -83,7 +83,7 @@ class CategoryResource extends Resource
             ])
             ->bulkActions([
                 ExportBulkAction::make()
-                    ->label('Export Selected Categories')
+                    ->label('Export Categories')
                     ->color('primary')
                     ->exporter(CategoryExporter::class)
             ]);

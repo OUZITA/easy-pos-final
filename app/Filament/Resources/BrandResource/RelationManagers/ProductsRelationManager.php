@@ -223,6 +223,7 @@ class ProductsRelationManager extends RelationManager
                     ->icon('heroicon-m-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
+                    ->hidden(fn() => Auth::user()?->role === Role::Cashier)
                     ->action(fn(Collection $records) => $records->each->update(['active' => true])),
 
                 Tables\Actions\BulkAction::make('deactivate')
@@ -230,6 +231,7 @@ class ProductsRelationManager extends RelationManager
                     ->icon('heroicon-m-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
+                    ->hidden(fn() => Auth::user()?->role === Role::Cashier)
                     ->action(fn(Collection $records) => $records->each->update(['active' => false])),
             ]);
     }

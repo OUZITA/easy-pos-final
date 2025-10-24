@@ -6,6 +6,8 @@ use App\Models\Sale;
 use Filament\Actions\Exports\ExportColumn;
 use Filament\Actions\Exports\Exporter;
 use Filament\Actions\Exports\Models\Export;
+use App\Filament\Exports\ProductExporter;
+use Filament\Actions\Exports\Enums\ExportFormat as EnumsExportFormat;
 
 class SaleExporter extends Exporter
 {
@@ -45,6 +47,13 @@ class SaleExporter extends Exporter
         ];
     }
 
+    public function getFormats(): array
+    {
+        return [
+            EnumsExportFormat::Csv,
+            //EnumsExportFormat::Xlsx
+        ];
+    }
     public static function getCompletedNotificationBody(Export $export): string
     {
         $body = 'Your sale export has completed and ' . number_format($export->successful_rows) . ' ' . str('row')->plural($export->successful_rows) . ' exported.';

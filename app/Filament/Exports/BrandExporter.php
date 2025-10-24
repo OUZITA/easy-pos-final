@@ -6,6 +6,7 @@ use App\Models\Brand;
 use Filament\Actions\Exports\ExportColumn;
 use Filament\Actions\Exports\Exporter;
 use Filament\Actions\Exports\Models\Export;
+use Filament\Actions\Exports\Enums\ExportFormat as EnumsExportFormat;
 
 class BrandExporter extends Exporter
 {
@@ -22,6 +23,14 @@ class BrandExporter extends Exporter
             ExportColumn::make('active'),
             ExportColumn::make('created_at'),
             ExportColumn::make('updated_at'),
+        ];
+    }
+
+    public function getFormats(): array
+    {
+        return [
+            EnumsExportFormat::Csv,
+            //EnumsExportFormat::Xlsx
         ];
     }
 

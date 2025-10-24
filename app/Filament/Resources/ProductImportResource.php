@@ -569,11 +569,9 @@ class ProductImportResource extends Resource
             ->bulkActions(
                 actions: [
                     ExportBulkAction::make()
+                        ->label('Export Stock In')
                         ->color('primary')
                         ->exporter(ProductImportExporter::class)
-                    /* ->formats([
-                            ExportFormat::Xlsx,
-                        ]) */
                 ]
             )
             ->defaultSort('created_at', 'desc');
